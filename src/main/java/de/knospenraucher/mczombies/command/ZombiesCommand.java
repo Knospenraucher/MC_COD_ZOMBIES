@@ -9,7 +9,7 @@ import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.game.GameManager;
 import de.knospenraucher.mczombies.map.BlockSnapshots;
 import de.knospenraucher.mczombies.map.MapData;
-import de.knospenraucher.mczombies.map.prefab.KolossMap;
+import de.knospenraucher.mczombies.map.prefab.RieseMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -40,7 +40,7 @@ import java.util.List;
  * /zombies wallweapon add &lt;item&gt; &lt;preis&gt; [munitionspreis] | remove &lt;nr&gt; | list
  * /zombies box add [pos] | remove &lt;nr&gt; | list
  * /zombies upgrade add [pos] | remove &lt;nr&gt; | list
- * /zombies buildmap koloss
+ * /zombies buildmap riese
  * </pre>
  */
 public final class ZombiesCommand {
@@ -124,7 +124,7 @@ public final class ZombiesCommand {
 								.then(Commands.argument("nr", IntegerArgumentType.integer(1)).executes(ZombiesCommand::removeUpgrade)))
 						.then(Commands.literal("list").executes(ZombiesCommand::listUpgrades)))
 				.then(Commands.literal("buildmap")
-						.then(Commands.literal("koloss").executes(ZombiesCommand::buildKoloss))));
+						.then(Commands.literal("riese").executes(ZombiesCommand::buildRiese))));
 	}
 
 	// ---------------------------------------------------------------- Spielsteuerung
@@ -522,14 +522,14 @@ public final class ZombiesCommand {
 
 	// ---------------------------------------------------------------- Vorgefertigte Maps
 
-	private static int buildKoloss(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+	private static int buildRiese(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
 		MapData map = editableMap(ctx);
 		if (map == null) {
 			return 0;
 		}
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
-		KolossMap.build(ctx.getSource().getLevel(), map, player.blockPosition());
-		ctx.getSource().sendSuccess(() -> Component.literal("Map „Koloss-Fabrik“ gebaut. Die alten Map-Einstellungen liegen in "
+		RieseMap.build(ctx.getSource().getLevel(), map, player.blockPosition());
+		ctx.getSource().sendSuccess(() -> Component.literal("Map „Der Riese“ (Nachbau von The Giant) gebaut. Die alten Map-Einstellungen liegen in "
 				+ "mczombies_map.json.bak. Start mit /zombies start.").withStyle(ChatFormatting.GREEN), true);
 		return 1;
 	}

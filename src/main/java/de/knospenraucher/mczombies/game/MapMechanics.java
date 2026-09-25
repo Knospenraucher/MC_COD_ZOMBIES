@@ -236,7 +236,12 @@ public class MapMechanics {
 		}
 		openedDoors.add(door.name);
 		if (door.zone != null) {
-			activeZones.add(door.zone);
+			// Mehrere Zonen durch Komma getrennt, z. B. "labor,hof".
+			for (String zone : door.zone.split(",")) {
+				if (!zone.isBlank()) {
+					activeZones.add(zone.trim());
+				}
+			}
 		}
 		for (BlockSnapshot block : door.blocks) {
 			level.destroyBlock(block.pos.toBlockPos(), false);
