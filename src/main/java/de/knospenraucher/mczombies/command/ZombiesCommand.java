@@ -34,7 +34,7 @@ public final class ZombiesCommand {
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("zombies")
-				.requires(source -> source.hasPermission(2))
+				.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 				.then(Commands.literal("start").executes(ZombiesCommand::start))
 				.then(Commands.literal("reset").executes(ZombiesCommand::reset))
 				.then(Commands.literal("status").executes(ZombiesCommand::status))
