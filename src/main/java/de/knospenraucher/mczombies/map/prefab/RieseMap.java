@@ -150,9 +150,9 @@ public final class RieseMap {
 	}
 
 	private void car(int x, int z) {
-		fill(x, 1, z, x + 4, 1, z + 2, Blocks.BLACK_WOOL);
+		fill(x, 1, z, x + 4, 1, z + 2, Blocks.POLISHED_BLACKSTONE);
 		fill(x + 1, 2, z, x + 3, 2, z + 2, Blocks.GLASS);
-		set(x, 0, z, Blocks.COAL_BLOCK);
+		set(x, 0, z, Blocks.COAL_BLOCK); // Ölflecken
 		set(x + 4, 0, z + 2, Blocks.COAL_BLOCK);
 	}
 
