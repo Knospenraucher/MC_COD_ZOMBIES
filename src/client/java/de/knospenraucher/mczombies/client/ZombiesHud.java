@@ -5,7 +5,7 @@ import de.knospenraucher.mczombies.network.HudSyncPayload;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Zeichnet das Spiel-HUD:
@@ -24,7 +24,7 @@ public final class ZombiesHud {
 	private ZombiesHud() {
 	}
 
-	public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+	public static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
 		Minecraft mc = Minecraft.getInstance();
 		GameState state = ClientGameState.state();
 		if (state == GameState.IDLE) {
@@ -36,7 +36,7 @@ public final class ZombiesHud {
 		String roundText = ClientGameState.round() > 0 ? String.valueOf(ClientGameState.round()) : "-";
 		graphics.pose().pushMatrix();
 		graphics.pose().scale(3.0F, 3.0F);
-		graphics.drawString(font, roundText, 3, 3, RED, true);
+		graphics.text(font, roundText, 3, 3, RED, true);
 		graphics.pose().popMatrix();
 
 		// ---- Zeile darunter: Zombies übrig / Countdown / Game Over
@@ -46,7 +46,7 @@ public final class ZombiesHud {
 			case GAME_OVER -> "GAME OVER";
 			default -> "";
 		};
-		graphics.drawString(font, info, 10, 40, state == GameState.GAME_OVER ? RED : WHITE, true);
+		graphics.text(font, info, 10, 40, state == GameState.GAME_OVER ? RED : WHITE, true);
 
 		// ---- Punkteliste rechts oben
 		String ownName = mc.player != null ? mc.player.getName().getString() : "";
@@ -61,8 +61,8 @@ public final class ZombiesHud {
 
 			graphics.fill(left - 3, y - 2, right + 3, y + font.lineHeight, BACKGROUND);
 			int nameColor = entry.down() ? GRAY : entry.name().equals(ownName) ? OWN : WHITE;
-			graphics.drawString(font, name, left, y, nameColor, true);
-			graphics.drawString(font, points, right - pointsWidth, y, GOLD, true);
+			graphics.text(font, name, left, y, nameColor, true);
+			graphics.text(font, points, right - pointsWidth, y, GOLD, true);
 			y += font.lineHeight + 3;
 		}
 	}
