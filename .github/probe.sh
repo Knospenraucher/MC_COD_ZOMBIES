@@ -1,56 +1,18 @@
 #!/bin/bash
-# Temporär: gibt API-Signaturen der verwendeten Klassen aus.
+# Temporär: gibt API-Signaturen der verwendeten Client-Klassen (26.3) aus.
 ./gradlew compileJava -q >/dev/null 2>&1 || true
-CP=$(find ~/.gradle/caches .gradle -name '*.jar' 2>/dev/null | tr '\n' ':')
-MC=$(for j in $(find ~/.gradle/caches .gradle -name '*.jar' 2>/dev/null); do unzip -l "$j" 2>/dev/null | grep -q 'net/minecraft/world/entity/Entity.class' && echo "$j"; done | head -1)
-echo "MCJAR=$MC"
-echo "== Zombie classes"; unzip -l "$MC" | grep -E '/Zombie\.class|/Zombie[A-Z]' | awk '{print $4}'
-echo "== EntityType-ish"; unzip -l "$MC" | grep -E 'entity/EntityType[s]?\.class' | awk '{print $4}'
+ALL=$(find ~/.gradle/caches .gradle -name '*.jar' 2>/dev/null | grep -v sources)
+MCJARS=$(for j in $ALL; do case "$j" in *26.3*) unzip -l "$j" 2>/dev/null | grep -q 'net/minecraft/client/Minecraft.class' && echo "$j";; esac; done)
+echo "CLIENTJARS=$MCJARS"
+MC=$(echo "$MCJARS" | head -1)
+FAPI=$(echo "$ALL" | grep -E '0\.161\.0\+26\.3|26\.3' | grep fabric | tr '\n' ':')
+CP="$MC:$(echo "$ALL" | grep -E '26\.3' | tr '\n' ':')"
+echo "== gui classes"; unzip -l "$MC" | awk '{print $4}' | grep -E '^net/minecraft/client/gui/[A-Za-z]+\.class$'
+echo "== graphics-like"; unzip -l "$MC" | awk '{print $4}' | grep -iE 'Graphics|GuiRender|Extractor' | grep -v '\$' | head -40
+echo "== fabric hud jars"; echo "$ALL" | grep -i 'rendering' | grep 26.3
 p(){ echo "== $1 | $2"; javap -cp "$CP" "$1" 2>&1 | grep -E "$2" | head -40; }
-p net.minecraft.world.entity.EntityType 'ZOMBIE|create\(|spawn\('
-p net.minecraft.world.entity.Entity '[Tt]ag|level\(|teleportTo|setPos\(|setYRot|discard|getUUID|isAlive|distanceToSqr|getEyeY|clearFire|getTags|playSound'
-p net.minecraft.world.entity.LivingEntity 'getAttribute\(|setHealth|getMaxHealth|removeAllEffects|addEffect|getHealth'
-p net.minecraft.world.entity.Mob 'setTarget|getTarget|setPersistenceRequired|setCanPickUpLoot'
-p net.minecraft.server.level.ServerLevel 'getEntity\(|getEntities\(|players\(|sendParticles|addFreshEntity'
-p net.minecraft.server.level.ServerPlayer 'setGameMode|connection|teleportTo|getAbilities|level\(|sendSystemMessage'
-p net.minecraft.world.entity.player.Player 'isCreative|isSpectator|getAbilities|getFoodData|getName'
-p net.minecraft.commands.CommandSourceStack 'getLevel|getPosition|sendSuccess|sendFailure|getPlayerOrException|hasPermission'
-p net.minecraft.commands.Commands 'hasPermission|LEVEL_|literal|argument'
-p net.minecraft.commands.arguments.coordinates.BlockPosArgument 'blockPos|get'
-p net.minecraft.commands.arguments.EntityArgument 'player|getPlayer'
-p net.minecraft.world.effect.MobEffectInstance '<init>|INFINITE'
-p net.minecraft.world.effect.MobEffects 'FIRE_RESISTANCE'
-p net.minecraft.world.entity.ai.attributes.Attributes 'MAX_HEALTH|MOVEMENT_SPEED|ATTACK_DAMAGE|FOLLOW_RANGE|SPAWN_REINFORCEMENTS'
-p net.minecraft.world.level.storage.LevelResource 'ROOT'
-p net.minecraft.server.MinecraftServer 'getWorldPath|getPlayerList|overworld'
-p net.minecraft.server.players.PlayerList 'getPlayer\(|getPlayers|broadcastSystemMessage'
-p net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket '<init>'
-p net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket '<init>'
-p net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket '<init>'
-p net.minecraft.core.particles.ParticleTypes 'SOUL_FIRE_FLAME|HAPPY_VILLAGER'
-p net.minecraft.world.level.GameType 'SURVIVAL|ADVENTURE'
-p net.minecraft.network.codec.StreamCodec 'composite|apply'
-p net.minecraft.network.codec.ByteBufCodecs 'STRING_UTF8|VAR_INT|BOOL| list\('
-p net.minecraft.network.protocol.common.custom.CustomPacketPayload 'Type|type\('
-p net.minecraft.resources.Identifier 'fromNamespaceAndPath'
-p net.minecraft.client.gui.GuiGraphics 'drawString|fill\(|pose\(|guiWidth'
-p net.minecraft.client.Minecraft 'getInstance|font|options|player'
-p net.minecraft.client.gui.Font 'width\(|lineHeight'
-p net.minecraft.client.Options 'hideGui'
-echo "== fabric networking classes"; for j in $(find ~/.gradle/caches -name 'fabric-networking-api*.jar' -o -name 'fabric-rendering-v1*.jar' -o -name 'fabric-entity-events*.jar' -o -name 'fabric-command-api-v2*.jar' -o -name 'fabric-lifecycle-events*.jar' | grep -v sources); do unzip -l "$j" | awk '{print $4}' | grep -E 'api/.*\.class$' | grep -vE '\$|impl' ; done | sort -u | head -80
-p net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry 'static|register'
-p net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking 'send\(|canSend'
-p net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking 'registerGlobalReceiver'
-p net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents 'DISCONNECT'
+p net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement 'render|void'
 p net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry 'add'
-p net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement 'render'
-p net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents 'ALLOW_DEATH|AFTER_DAMAGE|AFTER_DEATH'
-p 'net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents$AfterDamage' 'after|void'
-p 'net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents$AllowDeath' 'boolean'
-p 'net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents$AfterDeath' 'void'
-p net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback 'EVENT|register'
-p net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents 'SERVER_STARTED|SERVER_STOPPING'
-p net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents 'END_SERVER_TICK'
+p net.minecraft.client.Minecraft 'Font font|options|player;|getInstance'
+p net.minecraft.client.gui.Font 'width\(|lineHeight'
 p net.minecraft.world.entity.EntityTypes ' ZOMBIE;'
-p net.minecraft.client.Options 'hide|Gui'
-p net.minecraft.world.entity.Entity 'isRemoved'
