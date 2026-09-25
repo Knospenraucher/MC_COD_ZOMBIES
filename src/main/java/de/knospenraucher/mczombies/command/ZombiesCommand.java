@@ -377,7 +377,7 @@ public final class ZombiesCommand {
 			return 0;
 		}
 		BlockPos pos = lookedAtBlock(ctx);
-		Item item = ItemArgument.getItem(ctx, "item").createItemStack(1, false).getItem();
+		Item item = ItemArgument.getItem(ctx, "item").createItemStack(1).getItem();
 		int price = IntegerArgumentType.getInteger(ctx, "preis");
 		MapData.WallWeapon weapon = new MapData.WallWeapon();
 		weapon.pos = new MapData.Pos(pos);
