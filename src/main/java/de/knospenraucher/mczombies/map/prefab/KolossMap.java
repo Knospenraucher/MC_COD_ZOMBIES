@@ -54,8 +54,8 @@ public final class KolossMap {
 		// Erst alle Räume (sie teilen sich Wände mit dem Innenhof), dann der Innenhof,
 		// zuletzt Türen, Fenster und Waffen, damit keine Wand sie wieder überbaut.
 		room(-26, -8, -10, 8, Blocks.NETHER_BRICKS, Blocks.BRICKS);            // Schmelzofen (Westen)
-		room(10, -8, 26, 8, Blocks.WHITE_CONCRETE, Blocks.LIGHT_GRAY_CONCRETE); // Tierlabor (Osten)
-		room(-8, -26, 8, -10, Blocks.GRAY_CONCRETE, Blocks.SMOOTH_STONE);       // Hauptrechner (Norden)
+		room(10, -8, 26, 8, Blocks.QUARTZ_BLOCK, Blocks.SMOOTH_STONE); // Tierlabor (Osten)
+		room(-8, -26, 8, -10, Blocks.DEEPSLATE_TILES, Blocks.POLISHED_ANDESITE);       // Hauptrechner (Norden)
 		courtyard();
 
 		furnaceDetails();
@@ -238,10 +238,10 @@ public final class KolossMap {
 	private void teleporter(int x, int z) {
 		fill(x - 1, 0, z - 1, x + 1, 0, z + 1, Blocks.IRON_BLOCK);
 		set(x, 0, z, Blocks.SEA_LANTERN);
-		set(x - 1, 1, z - 1, Blocks.LIGHTNING_ROD);
-		set(x + 1, 1, z - 1, Blocks.LIGHTNING_ROD);
-		set(x - 1, 1, z + 1, Blocks.LIGHTNING_ROD);
-		set(x + 1, 1, z + 1, Blocks.LIGHTNING_ROD);
+		set(x - 1, 1, z - 1, Blocks.END_ROD);
+		set(x + 1, 1, z - 1, Blocks.END_ROD);
+		set(x - 1, 1, z + 1, Blocks.END_ROD);
+		set(x + 1, 1, z + 1, Blocks.END_ROD);
 	}
 
 	private BlockPos pos(int x, int y, int z) {
