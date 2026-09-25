@@ -9,6 +9,7 @@ import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.game.GameManager;
 import de.knospenraucher.mczombies.map.BlockSnapshots;
 import de.knospenraucher.mczombies.map.MapData;
+import de.knospenraucher.mczombies.map.prefab.KolossMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -39,6 +40,7 @@ import java.util.List;
  * /zombies wallweapon add &lt;item&gt; &lt;preis&gt; [munitionspreis] | remove &lt;nr&gt; | list
  * /zombies box add [pos] | remove &lt;nr&gt; | list
  * /zombies upgrade add [pos] | remove &lt;nr&gt; | list
+ * /zombies buildmap koloss
  * </pre>
  */
 public final class ZombiesCommand {
@@ -120,7 +122,9 @@ public final class ZombiesCommand {
 										.executes(ctx -> addUpgrade(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "pos")))))
 						.then(Commands.literal("remove")
 								.then(Commands.argument("nr", IntegerArgumentType.integer(1)).executes(ZombiesCommand::removeUpgrade)))
-						.then(Commands.literal("list").executes(ZombiesCommand::listUpgrades))));
+						.then(Commands.literal("list").executes(ZombiesCommand::listUpgrades)))
+				.then(Commands.literal("buildmap")
+						.then(Commands.literal("koloss").executes(ZombiesCommand::buildKoloss))));
 	}
 
 	// ---------------------------------------------------------------- Spielsteuerung
@@ -514,6 +518,20 @@ public final class ZombiesCommand {
 			ctx.getSource().sendSuccess(() -> Component.literal(line), false);
 		}
 		return machines.size();
+	}
+
+	// ---------------------------------------------------------------- Vorgefertigte Maps
+
+	private static int buildKoloss(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		ServerPlayer player = ctx.getSource().getPlayerOrException();
+		KolossMap.build(ctx.getSource().getLevel(), map, player.blockPosition());
+		ctx.getSource().sendSuccess(() -> Component.literal("Map „Koloss-Fabrik“ gebaut. Die alten Map-Einstellungen liegen in "
+				+ "mczombies_map.json.bak. Start mit /zombies start.").withStyle(ChatFormatting.GREEN), true);
+		return 1;
 	}
 
 	// ---------------------------------------------------------------- Hilfen

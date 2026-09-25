@@ -14,6 +14,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -164,6 +165,22 @@ public class MapData {
 		} catch (IOException e) {
 			MCZombies.LOGGER.error("Konnte Map-Daten {} nicht speichern", file, e);
 		}
+	}
+
+	/**
+	 * Löscht alle Map-Elemente (für vorgefertigte Maps).
+	 * Die bisherige Datei wird vorher als {@code mczombies_map.json.bak} gesichert.
+	 */
+	public void clearAll() {
+		try {
+			if (Files.exists(file)) {
+				Files.copy(file, file.resolveSibling(FILE_NAME + ".bak"), StandardCopyOption.REPLACE_EXISTING);
+			}
+		} catch (IOException e) {
+			MCZombies.LOGGER.warn("Konnte keine Sicherung von {} anlegen", file, e);
+		}
+		data = new Data();
+		save();
 	}
 
 	/** Hilfe für Befehle: entfernt Element {@code nr} (1-basiert) aus einer Liste. */
