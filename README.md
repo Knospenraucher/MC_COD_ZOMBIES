@@ -67,6 +67,19 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 - **Aufrüst-Maschine:** Rechtsklick mit einer Schusswaffe in der Hand für 5000 Punkte:
   doppelter Schaden, 1,5× Magazin und Reserve, volle Munition, Glitzer und „(Verbessert)“ im Namen.
 
+## Fertige Map: Koloss-Fabrik
+
+Frei nach dem Aufbau von „The Giant“. `/zombies buildmap koloss` baut sie um den Spieler herum
+(am besten in einer flachen Welt, braucht etwa 70 × 60 Blöcke):
+
+- **Innenhof** (Start) mit der Statue eines Riesen, Pistole, Sturmgewehr und Schrotflinte an der Wand,
+  Zufallskiste und zwei Fenstern.
+- **Schmelzofen** (Westen, Tür 750): Maschinenpistole, Hochöfen, Teleporter-Deko.
+- **Tierlabor** (Osten, Tür 750): Scharfschützengewehr, Käfige, Teleporter-Deko.
+- **Hauptrechner** (Norden, Tür 1250): Aufrüst-Maschine (Amboss) vor der Rechnerwand.
+- Jeder Raum hat ein Fenster, hinter dem Zombies aus einem geschlossenen Käfig kommen, und einen
+  weiteren Kistenstandort. Wandwaffen sind Goldblöcke. Die Teleporter haben noch keine Funktion.
+
 ## Voraussetzungen
 
 - **JDK 25** (z.B. [Eclipse Temurin 25](https://adoptium.net/)). Prüfen mit `java -version`.
@@ -143,6 +156,7 @@ Alle Befehle brauchen Operator-Rechte (in Einzelspieler: Cheats an).
 | `/zombies box remove <nr>` / `box list` | Kistenstandort entfernen / anzeigen |
 | `/zombies upgrade add [x y z]` | Aufrüst-Maschine (ohne Koordinaten: der Block, auf den du schaust) |
 | `/zombies upgrade remove <nr>` / `upgrade list` | Aufrüst-Maschine entfernen / anzeigen |
+| `/zombies buildmap koloss` | Baut die fertige Map „Koloss-Fabrik“ um dich herum (ersetzt die Map-Einstellungen, alte Datei wird als `.bak` gesichert) |
 
 Die Map kann nur bearbeitet werden, wenn kein Spiel läuft. `/zombies spawn show` zeigt auch Türen
 (Flammen), Fenster (Funken), Wandwaffen (grün), Kistenstandorte (Lichtstrahl) und
