@@ -11,6 +11,8 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Alle Balancing-Werte der Mod. Wird als {@code config/mczombies.json} gespeichert
@@ -87,6 +89,49 @@ public class ZombiesConfig {
 
 	/** Wie weit Zombies Spieler wahrnehmen (Blöcke). */
 	public double followRange = 64.0;
+
+	// ---------------------------------------------------------------- Zufallskiste
+	/** Preis für einen Dreh an der Zufallskiste. */
+	public int boxPrice = 950;
+	/** So oft wird die Kiste mindestens benutzt, bevor sie umziehen kann. */
+	public int boxMinUsesBeforeMove = 4;
+	/** Chance pro Dreh (danach), dass die Kiste umzieht. Der Preis wird dann erstattet. */
+	public double boxMoveChance = 0.2;
+	/** Mögliche Waffen mit Gewichtung (höher = häufiger). */
+	public List<BoxEntry> boxWeapons = new ArrayList<>(List.of(
+			new BoxEntry("minecraft:iron_sword", 10),
+			new BoxEntry("minecraft:bow", 10),
+			new BoxEntry("minecraft:crossbow", 8),
+			new BoxEntry("minecraft:iron_axe", 8),
+			new BoxEntry("minecraft:diamond_sword", 5),
+			new BoxEntry("minecraft:trident", 3),
+			new BoxEntry("minecraft:mace", 2),
+			new BoxEntry("minecraft:netherite_sword", 2)));
+
+	/** Eintrag der Waffenliste der Zufallskiste. */
+	public static class BoxEntry {
+		public String item;
+		public int weight;
+
+		public BoxEntry(String item, int weight) {
+			this.item = item;
+			this.weight = weight;
+		}
+	}
+
+	// ---------------------------------------------------------------- Waffen
+	/** Pfeile, die man mit einem Bogen/einer Armbrust bzw. als Munition bekommt. */
+	public int arrowsPerAmmo = 32;
+
+	// ---------------------------------------------------------------- Fenster
+	/** Alle so vielen Ticks reißt ein Zombie am Fenster ein Brett heraus. */
+	public int windowTearIntervalTicks = 40;
+	/** Alle so vielen Ticks repariert ein schleichender Spieler ein Brett. */
+	public int windowRepairIntervalTicks = 20;
+	/** Punkte pro repariertem Brett. */
+	public int pointsPerBoardRepair = 10;
+	/** Höchstens so viele Reparatur-Punkte pro Spieler und Runde. */
+	public int windowRepairPointsCapPerRound = 500;
 
 	// ---------------------------------------------------------------- Spieler
 	/** Spieler während des Spiels in den Abenteuermodus setzen (verhindert Abbauen der Map). */

@@ -61,6 +61,7 @@ public class GameManager {
 
 	private final MinecraftServer server;
 	private final MapData map;
+	private final MapMechanics mechanics;
 	private final RandomSource random = RandomSource.create();
 
 	private GameState state = GameState.IDLE;
@@ -82,6 +83,7 @@ public class GameManager {
 	private GameManager(MinecraftServer server) {
 		this.server = server;
 		this.map = MapData.load(server);
+		this.mechanics = new MapMechanics(this, map);
 	}
 
 	// ================================================================ Lebenszyklus
@@ -136,6 +138,9 @@ public class GameManager {
 		if (map.getZombieSpawns().isEmpty()) {
 			return "Keine Zombie-Spawnpunkte gesetzt. Nutze /zombies spawn add.";
 		}
+		if (map.getZombieSpawns().stream().noneMatch(sp -> MapData.START_ZONE.equals(sp.zone()))) {
+			return "Kein Spawnpunkt in der Zone „start“. Ohne ihn spawnen in Runde 1 keine Zombies.";
+		}
 		List<ServerPlayer> participants = new ArrayList<>();
 		for (ServerPlayer player : startLevel.players()) {
 			if (!player.isSpectator()) {
@@ -155,6 +160,7 @@ public class GameManager {
 		round = 0;
 		zombiesToSpawn = 0;
 
+		mechanics.start(level);
 		for (ServerPlayer player : participants) {
 			players.put(player.getUUID(), new PlayerData(
 					player.getName().getString(), config.startingPoints, currentGameType(player)));
@@ -172,6 +178,10 @@ public class GameManager {
 	/** Bricht ein laufendes Spiel ab und stellt alles wieder her. */
 	public void reset() {
 		removeAllZombies();
+		// Türen/Fenster nur zurücksetzen, wenn wirklich ein Spiel lief,
+		// damit Umbauten im Kreativmodus nicht überschrieben werden.
+		mechanics.reset(level);
+		level = null;
 		restorePlayers();
 		players.clear();
 		round = 0;
@@ -210,6 +220,9 @@ public class GameManager {
 			}
 		}
 
+		if (isRunning()) {
+			mechanics.tick(level, ticks, aliveZombies, alivePlayers());
+		}
 		if (isRunning() && ticks % MOB_SWEEP_INTERVAL == 0) {
 			removeOtherMobs();
 		}
@@ -225,6 +238,7 @@ public class GameManager {
 		round = newRound;
 		reviveDownedPlayers();
 		zombiesToSpawn = RoundScaling.zombieCount(round, countAlivePlayers());
+		mechanics.onRoundStart();
 		spawnCooldown = 0;
 		state = GameState.ACTIVE;
 
@@ -343,9 +357,17 @@ public class GameManager {
 		}
 	}
 
-	/** Bevorzugt Spawnpunkte in der Nähe lebender Spieler, sonst ein beliebiger. */
+	/**
+	 * Wählt einen Spawnpunkt aus einer aktiven Zone. Punkte in der Nähe lebender
+	 * Spieler werden bevorzugt.
+	 */
 	private BlockPos pickSpawnPoint() {
-		List<BlockPos> all = map.getZombieSpawns();
+		List<BlockPos> all = new ArrayList<>();
+		for (MapData.SpawnPoint spawn : map.getZombieSpawns()) {
+			if (mechanics.isZoneActive(spawn.zone())) {
+				all.add(spawn.toBlockPos());
+			}
+		}
 		if (all.isEmpty()) {
 			return null;
 		}
@@ -565,6 +587,38 @@ public class GameManager {
 		}
 	}
 
+	/**
+	 * Zieht Punkte ab, wenn genug vorhanden sind.
+	 *
+	 * @return false, wenn der Spieler zu wenig Punkte hat oder nicht teilnimmt
+	 */
+	public boolean spendPoints(ServerPlayer player, int amount) {
+		PlayerData data = players.get(player.getUUID());
+		if (data == null || data.points < amount) {
+			return false;
+		}
+		data.points -= amount;
+		syncHud();
+		return true;
+	}
+
+	/**
+	 * Rechtsklick auf einen Block. Nur lebende Teilnehmer eines laufenden Spiels
+	 * können Türen, Waffen und die Kiste benutzen.
+	 *
+	 * @return true, wenn der Klick verarbeitet wurde
+	 */
+	public boolean onUseBlock(ServerPlayer player, BlockPos pos) {
+		if (!isRunning() || level == null || player.level() != level) {
+			return false;
+		}
+		PlayerData data = players.get(player.getUUID());
+		if (data == null || data.down) {
+			return false;
+		}
+		return mechanics.onUse(level, player, pos);
+	}
+
 	/** @return false, wenn der Spieler nicht am Spiel teilnimmt */
 	public boolean setPoints(ServerPlayer player, int amount) {
 		PlayerData data = players.get(player.getUUID());
@@ -591,9 +645,29 @@ public class GameManager {
 
 	private void showSpawnParticles() {
 		ServerLevel overworld = level != null ? level : server.overworld();
-		for (BlockPos pos : map.getZombieSpawns()) {
+		for (MapData.SpawnPoint pos : map.getZombieSpawns()) {
 			overworld.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-					pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 6, 0.2, 0.5, 0.2, 0.01);
+					pos.x + 0.5, pos.y + 0.5, pos.z + 0.5, 6, 0.2, 0.5, 0.2, 0.01);
+		}
+		for (MapData.Door door : map.getDoors()) {
+			for (MapData.BlockSnapshot block : door.blocks) {
+				overworld.sendParticles(ParticleTypes.FLAME,
+						block.pos.x + 0.5, block.pos.y + 0.5, block.pos.z + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
+			}
+		}
+		for (MapData.Window window : map.getWindows()) {
+			for (MapData.BlockSnapshot board : window.boards) {
+				overworld.sendParticles(ParticleTypes.CRIT,
+						board.pos.x + 0.5, board.pos.y + 0.5, board.pos.z + 0.5, 2, 0.2, 0.2, 0.2, 0.0);
+			}
+		}
+		for (MapData.WallWeapon weapon : map.getWallWeapons()) {
+			overworld.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+					weapon.pos.x + 0.5, weapon.pos.y + 0.5, weapon.pos.z + 0.5, 4, 0.3, 0.3, 0.3, 0.0);
+		}
+		for (BlockPos box : map.getBoxLocations()) {
+			overworld.sendParticles(ParticleTypes.END_ROD,
+					box.getX() + 0.5, box.getY() + 1.2, box.getZ() + 0.5, 4, 0.2, 0.4, 0.2, 0.0);
 		}
 		BlockPos playerSpawn = map.getPlayerSpawn();
 		if (playerSpawn != null) {
@@ -629,7 +703,7 @@ public class GameManager {
 		};
 	}
 
-	private void broadcast(Component message) {
+	void broadcast(Component message) {
 		server.getPlayerList().broadcastSystemMessage(message, false);
 	}
 

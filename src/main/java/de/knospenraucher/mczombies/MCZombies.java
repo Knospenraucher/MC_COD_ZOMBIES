@@ -3,6 +3,7 @@ package de.knospenraucher.mczombies;
 import de.knospenraucher.mczombies.command.ZombiesCommand;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.event.CombatEvents;
+import de.knospenraucher.mczombies.event.InteractionEvents;
 import de.knospenraucher.mczombies.game.GameManager;
 import de.knospenraucher.mczombies.network.ModNetworking;
 import net.fabricmc.api.ModInitializer;
@@ -27,7 +28,7 @@ public class MCZombies implements ModInitializer {
 		ModNetworking.registerPayloads();
 
 		CommandRegistrationCallback.EVENT.register(
-				(dispatcher, registryAccess, environment) -> ZombiesCommand.register(dispatcher));
+				(dispatcher, registryAccess, environment) -> ZombiesCommand.register(dispatcher, registryAccess));
 
 		// Pro Server-Instanz genau ein GameManager (Singleplayer startet intern auch einen Server).
 		ServerLifecycleEvents.SERVER_STARTED.register(GameManager::create);
@@ -40,6 +41,7 @@ public class MCZombies implements ModInitializer {
 		});
 
 		CombatEvents.register();
+		InteractionEvents.register();
 		LOGGER.info("MC Zombies geladen");
 	}
 
