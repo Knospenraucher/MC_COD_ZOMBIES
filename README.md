@@ -1,6 +1,6 @@
 # MC Zombies: Untoten-Wellen
 
-Eine Fabric-Mod für **Minecraft Java 1.21.10**: Spieler verteidigen sich in einer eigenen Map gegen
+Eine Fabric-Mod für **Minecraft Java 26.3**: Spieler verteidigen sich in einer eigenen Map gegen
 Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
 > Aktueller Stand: **Phase 1 – Grundgerüst** (Rundensystem, Punkte, HUD, Game Over).
@@ -22,9 +22,9 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
 ## Voraussetzungen
 
-- **JDK 21** (z.B. [Eclipse Temurin 21](https://adoptium.net/)). Prüfen mit `java -version`.
+- **JDK 25** (z.B. [Eclipse Temurin 25](https://adoptium.net/)). Prüfen mit `java -version`.
 - Gradle musst du **nicht** installieren: Das Projekt bringt den Gradle-Wrapper (`gradlew`) mit,
-  der beim ersten Start die passende Gradle-Version (8.14.3) selbst herunterlädt.
+  der beim ersten Start die passende Gradle-Version (9.7.1) selbst herunterlädt.
 - Optional eine IDE: IntelliJ IDEA (Community reicht) oder VS Code mit Java-Erweiterung.
 
 ## Bauen
@@ -40,7 +40,7 @@ gradlew.bat build
 Der erste Build dauert einige Minuten (Minecraft und Fabric werden heruntergeladen). Die fertige Mod
 liegt danach in `build/libs/mczombies-0.1.0.jar`. Diese Datei zusammen mit der
 [Fabric API](https://modrinth.com/mod/fabric-api) in den `mods`-Ordner einer Fabric-Installation
-für 1.21.10 legen.
+für 26.3 legen.
 
 Jeder Push auf GitHub wird außerdem automatisch gebaut (Reiter *Actions*); dort kann man die Jar
 auch als Artefakt herunterladen.
