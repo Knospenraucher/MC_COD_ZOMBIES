@@ -21,12 +21,12 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.GameType;
 
 import java.util.ArrayList;
@@ -66,8 +66,8 @@ public class GameManager {
 	/** Zombies, die in dieser Runde noch gespawnt werden müssen. */
 	private int zombiesToSpawn;
 	private int spawnCooldown;
-	/** UUIDs der aktuell lebenden Rundenzombies. */
-	private final Set<UUID> aliveZombies = new HashSet<>();
+	/** Aktuell lebende Rundenzombies. */
+	private final Set<Zombie> aliveZombies = new HashSet<>();
 	/** Teilnehmende Spieler in Beitrittsreihenfolge. */
 	private final Map<UUID, PlayerData> players = new LinkedHashMap<>();
 	private long ticks;
@@ -226,16 +226,15 @@ public class GameManager {
 	}
 
 	private void tickRound() {
-		// Verschwundene Zombies (z.B. in ungeladenen Chunks) werden nachgespawnt,
+		// Entfernte Zombies (z.B. in ungeladenen Chunks) werden nachgespawnt,
 		// damit die Runde nicht hängen bleibt. Getötete Zombies wurden bereits in
 		// onZombieDeath entfernt.
-		aliveZombies.removeIf(uuid -> {
-			Entity entity = level.getEntity(uuid);
-			if (entity == null) {
+		aliveZombies.removeIf(zombie -> {
+			if (zombie.isRemoved()) {
 				zombiesToSpawn++;
 				return true;
 			}
-			return !entity.isAlive();
+			return false;
 		});
 
 		ZombiesConfig config = ZombiesConfig.get();
@@ -291,7 +290,7 @@ public class GameManager {
 		if (spawn == null) {
 			return false;
 		}
-		Zombie zombie = EntityType.ZOMBIE.create(level, EntitySpawnReason.EVENT);
+		Zombie zombie = EntityTypes.ZOMBIE.create(level, EntitySpawnReason.EVENT);
 		if (zombie == null) {
 			return false;
 		}
@@ -317,7 +316,7 @@ public class GameManager {
 		if (!level.addFreshEntity(zombie)) {
 			return false;
 		}
-		aliveZombies.add(zombie.getUUID());
+		aliveZombies.add(zombie);
 		ServerPlayer target = nearestAlivePlayer(zombie);
 		if (target != null) {
 			zombie.setTarget(target);
@@ -356,12 +355,10 @@ public class GameManager {
 
 	/** Lässt jeden Zombie den nächsten lebenden Spieler jagen. */
 	private void retargetZombies() {
-		for (UUID uuid : aliveZombies) {
-			if (level.getEntity(uuid) instanceof Zombie zombie) {
-				ServerPlayer target = nearestAlivePlayer(zombie);
-				if (target != null && zombie.getTarget() != target) {
-					zombie.setTarget(target);
-				}
+		for (Zombie zombie : aliveZombies) {
+			ServerPlayer target = nearestAlivePlayer(zombie);
+			if (target != null && zombie.getTarget() != target) {
+				zombie.setTarget(target);
 			}
 		}
 	}
@@ -383,13 +380,8 @@ public class GameManager {
 	}
 
 	private void removeAllZombies() {
-		if (level != null) {
-			for (UUID uuid : aliveZombies) {
-				Entity entity = level.getEntity(uuid);
-				if (entity != null) {
-					entity.discard();
-				}
-			}
+		for (Zombie zombie : aliveZombies) {
+			zombie.discard();
 		}
 		aliveZombies.clear();
 		zombiesToSpawn = 0;
@@ -401,18 +393,18 @@ public class GameManager {
 		if (level == null) {
 			return;
 		}
-		for (Zombie zombie : level.getEntities(EntityType.ZOMBIE, z -> z.getTags().contains(ZOMBIE_TAG))) {
+		for (Zombie zombie : level.getEntities(EntityTypes.ZOMBIE, z -> z.entityTags().contains(ZOMBIE_TAG))) {
 			zombie.discard();
 		}
 	}
 
 	public static boolean isRoundZombie(Entity entity) {
-		return entity instanceof Zombie && entity.getTags().contains(ZOMBIE_TAG);
+		return entity instanceof Zombie && entity.entityTags().contains(ZOMBIE_TAG);
 	}
 
 	/** Aufgerufen, wenn ein Rundenzombie stirbt (egal wodurch). */
 	public void onZombieDeath(Entity zombie) {
-		aliveZombies.remove(zombie.getUUID());
+		aliveZombies.remove(zombie);
 	}
 
 	// ================================================================ Spieler

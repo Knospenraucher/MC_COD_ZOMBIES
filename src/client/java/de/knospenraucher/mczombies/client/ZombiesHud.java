@@ -27,7 +27,7 @@ public final class ZombiesHud {
 	public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
 		Minecraft mc = Minecraft.getInstance();
 		GameState state = ClientGameState.state();
-		if (state == GameState.IDLE || mc.options.hideGui) {
+		if (state == GameState.IDLE) {
 			return;
 		}
 		Font font = mc.font;

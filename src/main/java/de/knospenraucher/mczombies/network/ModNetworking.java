@@ -8,6 +8,6 @@ public final class ModNetworking {
 	}
 
 	public static void registerPayloads() {
-		PayloadTypeRegistry.playS2C().register(HudSyncPayload.TYPE, HudSyncPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(HudSyncPayload.TYPE, HudSyncPayload.CODEC);
 	}
 }
