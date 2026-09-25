@@ -126,6 +126,15 @@ public class GameManager {
 		return state == GameState.INTERMISSION || state == GameState.ACTIVE;
 	}
 
+	/**
+	 * Soll dieses Wesen gar nicht erst in die Welt kommen?
+	 * Solange ein Spiel läuft (inkl. Game-Over-Anzeige), sind nur die eigenen Rundenzombies erlaubt.
+	 */
+	public boolean blocksSpawn(Entity entity) {
+		return state != GameState.IDLE && ZombiesConfig.get().removeOtherMobsDuringGame
+				&& entity instanceof Mob && !isRoundZombie(entity);
+	}
+
 	// ================================================================ Start / Reset
 
 	/**
