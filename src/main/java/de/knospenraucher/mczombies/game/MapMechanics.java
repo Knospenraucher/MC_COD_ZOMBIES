@@ -433,9 +433,8 @@ public class MapMechanics {
 	}
 
 	private static void give(ServerPlayer player, ItemStack stack) {
-		if (!player.getInventory().add(stack)) {
-			player.drop(stack, false);
-		}
+		// Legt das Item ins Inventar oder lässt es fallen, wenn kein Platz ist.
+		player.getInventory().placeItemBackInInventory(stack);
 	}
 
 	private static void notEnoughPoints(ServerPlayer player, int price) {
