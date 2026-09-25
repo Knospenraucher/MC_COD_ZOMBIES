@@ -141,8 +141,8 @@ public class GunItem extends Item {
 
 	/**
 	 * Fabric-Hook: kein "Neu-Ausrüsten"-Wackeln der Waffe, nur weil sich die Munition ändert.
-	 * (Ohne @Override, damit der Code auch ohne den Hook kompiliert.)
 	 */
+	@Override
 	public boolean allowComponentsUpdateAnimation(Player player, InteractionHand hand, ItemStack oldStack, ItemStack newStack) {
 		return oldStack.getItem() != newStack.getItem();
 	}

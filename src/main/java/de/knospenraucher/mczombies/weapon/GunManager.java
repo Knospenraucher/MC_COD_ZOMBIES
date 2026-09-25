@@ -241,7 +241,7 @@ public final class GunManager {
 		currentShot = new Shot(shooter, headshot);
 		try {
 			// Keine Schadens-Abklingzeit: sonst würden schnelle Waffen viele Treffer verlieren.
-			target.invulnerableTime = 0;
+			target.setInvulnerableTime(0);
 			target.hurtServer(level, shooter.damageSources().playerAttack(shooter), amount);
 		} finally {
 			currentShot = previous;
