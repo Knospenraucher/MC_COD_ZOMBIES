@@ -26,7 +26,7 @@ public class ZombiesConfig {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("mczombies.json");
 
 	/** Aktuelle Version der Config-Datei (für automatische Anpassung alter Dateien). */
-	private static final int CURRENT_VERSION = 4;
+	private static final int CURRENT_VERSION = 5;
 
 	private static ZombiesConfig instance = new ZombiesConfig();
 
@@ -74,10 +74,15 @@ public class ZombiesConfig {
 	public double spawnPointActivationRadius = 48.0;
 
 	// ---------------------------------------------------------------- Zombie-Werte
-	/** Leben in Runde 1 (2 = ein Herz). 1 = ein Faustschlag. */
+	/** Nur noch Rückfallwert, falls healthEarlyRounds leer ist. */
 	public double healthBase = 1.0;
-	/** Zusätzliches Leben pro Runde, bis healthLinearUntilRound. */
-	public double healthPerRound = 4.0;
+	/**
+	 * Leben in den ersten Runden (2 = ein Herz, ein Faustschlag macht 1).
+	 * Standard: Runde 1 ein Schlag, Runde 2 und 3 zwei Schläge.
+	 */
+	public List<Double> healthEarlyRounds = new ArrayList<>(List.of(1.0, 2.0, 2.0));
+	/** Danach pro Runde so viel mehr Leben, bis healthLinearUntilRound. */
+	public double healthPerRound = 3.0;
 	/** Bis zu dieser Runde steigt das Leben linear ... */
 	public int healthLinearUntilRound = 9;
 	/** ... danach wird es pro Runde mit diesem Faktor multipliziert. */
@@ -239,6 +244,11 @@ public class ZombiesConfig {
 		if (configVersion < 3) {
 			// Phase 3: Zufallskiste enthält die eigenen Schusswaffen.
 			boxWeapons = defaultBoxWeapons();
+		}
+		if (configVersion < 5) {
+			// Runde 2 und 3: zwei Faustschläge, danach langsamer Anstieg.
+			healthEarlyRounds = new ArrayList<>(List.of(1.0, 2.0, 2.0));
+			healthPerRound = 3.0;
 		}
 		// Neue Waffen in älteren Dateien ergänzen (vorhandene Werte bleiben).
 		if (guns == null) {

@@ -9,7 +9,7 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 ## Features (Phase 1)
 
 - **Start mit der Faust:** Beim Spielstart wird das Inventar geleert (und bei Spielende
-  zurückgegeben). In Runde 1 haben Zombies nur ein halbes Herz und sterben mit einem Faustschlag.
+  zurückgegeben). In Runde 1 sterben Zombies mit einem Faustschlag, in Runde 2 und 3 mit zwei, danach werden sie stetig stärker.
 - **Rundensystem:** Zombies spawnen an festgelegten Spawnpunkten. Anzahl, Leben, Tempo und Schaden
   steigen pro Runde. Zombies tragen einen Helm und verbrennen deshalb tagsüber nicht. Andere
   Mobs (Tiere, Monster) werden während des Spiels entfernt. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
@@ -179,7 +179,7 @@ Die wichtigsten Werte:
 | `zombiesBaseCount` / `zombiesPerRound` | 6 / 3 | Zombies in Runde 1 / zusätzlich pro Runde |
 | `zombiesExtraPlayerFactor` | 0.5 | +50 % Zombies pro weiterem Spieler |
 | `maxAliveZombies` | 24 | Maximal gleichzeitig lebende Zombies |
-| `healthBase` / `healthPerRound` | 1 / 4 | Leben in Runde 1 / zusätzlich pro Runde |
+| `healthEarlyRounds` / `healthPerRound` | [1, 2, 2] / 3 | Leben in Runde 1–3 (1 = ein Faustschlag) / danach zusätzlich pro Runde |
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
 | `speedBase` / `speedPerRound` / `speedMax` | 0.20 / 0.008 / 0.33 | Laufgeschwindigkeit |
 | `damageBase` / `damagePerRound` / `damageMax` | 2 / 0.25 / 10 | Schaden pro Schlag |

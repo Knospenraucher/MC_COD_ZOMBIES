@@ -2,6 +2,8 @@ package de.knospenraucher.mczombies.game;
 
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 
+import java.util.List;
+
 /**
  * Formeln, wie Zombies pro Runde stärker werden. Alle Stellschrauben kommen aus der Config.
  */
@@ -17,13 +19,24 @@ public final class RoundScaling {
 		return Math.max(1, (int) Math.round(base * playerFactor));
 	}
 
-	/** Leben: erst linear, ab {@code healthLinearUntilRound} exponentiell. */
+	/**
+	 * Leben: in den ersten Runden fest aus {@code healthEarlyRounds}, danach
+	 * pro Runde {@code healthPerRound} mehr und ab {@code healthLinearUntilRound} exponentiell.
+	 */
 	public static double health(int round) {
 		ZombiesConfig c = ZombiesConfig.get();
-		int linearRounds = Math.min(round, c.healthLinearUntilRound);
-		double health = c.healthBase + c.healthPerRound * (linearRounds - 1);
-		if (round > c.healthLinearUntilRound) {
-			health *= Math.pow(c.healthFactorAfterLinear, round - c.healthLinearUntilRound);
+		List<Double> early = c.healthEarlyRounds != null && !c.healthEarlyRounds.isEmpty()
+				? c.healthEarlyRounds : List.of(c.healthBase);
+		double health;
+		if (round <= early.size()) {
+			health = early.get(Math.max(0, round - 1));
+		} else {
+			int linearRounds = Math.max(round, early.size());
+			linearRounds = Math.min(linearRounds, Math.max(c.healthLinearUntilRound, early.size()));
+			health = early.get(early.size() - 1) + c.healthPerRound * (linearRounds - early.size());
+			if (round > c.healthLinearUntilRound) {
+				health *= Math.pow(c.healthFactorAfterLinear, round - Math.max(c.healthLinearUntilRound, early.size()));
+			}
 		}
 		return Math.min(Math.max(1.0, health), Math.min(c.healthMax, 1024.0));
 	}
