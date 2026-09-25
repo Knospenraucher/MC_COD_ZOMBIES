@@ -67,18 +67,26 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 - **Aufrüst-Maschine:** Rechtsklick mit einer Schusswaffe in der Hand für 5000 Punkte:
   doppelter Schaden, 1,5× Magazin und Reserve, volle Munition, Glitzer und „(Verbessert)“ im Namen.
 
-## Fertige Map: Koloss-Fabrik
+## Fertige Map: Der Riese (Nachbau von „The Giant“)
 
-Frei nach dem Aufbau von „The Giant“. `/zombies buildmap koloss` baut sie um den Spieler herum
-(am besten in einer flachen Welt, braucht etwa 70 × 60 Blöcke):
+Nachbau der Black-Ops-III-Map. Räume, Verbindungen und Preise folgen der Beschreibung im
+Call-of-Duty-Wiki, die Maße sind geschätzt. `/zombies buildmap riese` baut sie um den Spieler herum
+(am besten in einer flachen Welt, braucht etwa 100 × 110 Blöcke). Der Spieler steht danach im Start.
 
-- **Innenhof** (Start) mit der Statue eines Riesen, Pistole, Sturmgewehr und Schrotflinte an der Wand,
-  Zufallskiste und zwei Fenstern.
-- **Schmelzofen** (Westen, Tür 750): Maschinenpistole, Hochöfen, Teleporter-Deko.
-- **Tierlabor** (Osten, Tür 750): Scharfschützengewehr, Käfige, Teleporter-Deko.
-- **Hauptrechner** (Norden, Tür 1250): Aufrüst-Maschine (Amboss) vor der Rechnerwand.
-- Jeder Raum hat ein Fenster, hinter dem Zombies aus einem geschlossenen Käfig kommen, und einen
-  weiteren Kistenstandort. Wandwaffen sind Goldblöcke. Die Teleporter haben noch keine Funktion.
+| Bereich | Zugang | Inhalt |
+|---|---|---|
+| Startbereich | – | Hauptrechner mit Aufrüst-Maschine, Sturmgewehr 500, Pistole 500 |
+| Tierversuchslabor (links) | 2 Türen à 750 | MP 1250, Pistole 750, Kiste, Käfige, Obergeschoss |
+| Autowerkstatt (rechts) | Tür 750 | Schrotflinte 750, MP 1300 vor dem Ofen, Kiste, Autos, Obergeschoss |
+| Teleporter A | Tür 1250 aus dem Labor | Sturmgewehr 1500, Kiste |
+| Teleporter B | Treppe in der Werkstatt | – |
+| Innenhof (tiefer) | vom Labor/der Werkstatt herunterspringen | MP 1250, Kiste, Generator |
+| Teleporter C | Tür 1250 aus dem Innenhof | Sturmgewehr 1400, Kiste auf dem Laufsteg |
+| Brücke (oben) | Sperre 1000 | verbindet die Obergeschosse von Labor und Werkstatt |
+
+Abweichungen vom Original: Teleporter und Stromschalter sind nur Deko (Strom kommt in Phase 4,
+bis dahin ist die Brücke eine kaufbare Sperre), die Aufrüst-Maschine ist sofort nutzbar, und die
+Wandwaffen sind auf die sieben Waffen der Mod abgebildet. Wandwaffen sind Goldblöcke.
 
 ## Voraussetzungen
 
@@ -156,7 +164,7 @@ Alle Befehle brauchen Operator-Rechte (in Einzelspieler: Cheats an).
 | `/zombies box remove <nr>` / `box list` | Kistenstandort entfernen / anzeigen |
 | `/zombies upgrade add [x y z]` | Aufrüst-Maschine (ohne Koordinaten: der Block, auf den du schaust) |
 | `/zombies upgrade remove <nr>` / `upgrade list` | Aufrüst-Maschine entfernen / anzeigen |
-| `/zombies buildmap koloss` | Baut die fertige Map „Koloss-Fabrik“ um dich herum (ersetzt die Map-Einstellungen, alte Datei wird als `.bak` gesichert) |
+| `/zombies buildmap riese` | Baut den Nachbau von „The Giant“ um dich herum (ersetzt die Map-Einstellungen, alte Datei wird als `.bak` gesichert) |
 
 Die Map kann nur bearbeitet werden, wenn kein Spiel läuft. `/zombies spawn show` zeigt auch Türen
 (Flammen), Fenster (Funken), Wandwaffen (grün), Kistenstandorte (Lichtstrahl) und
