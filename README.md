@@ -3,11 +3,13 @@
 Eine Fabric-Mod für **Minecraft Java 26.3**: Spieler verteidigen sich in einer eigenen Map gegen
 Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
-> Aktueller Stand: **Phase 2 – Map-Mechaniken** (Türen, Wandwaffen, Zufallskiste, Fenster).
-> Eigene Schusswaffen, Upgrade-Maschine, Perks usw. folgen in späteren Phasen.
+> Aktueller Stand: **Phase 3 – Schusswaffen** (7 Waffen, Munition, Nachladen, Aufrüst-Maschine).
+> Perks, Power-ups, Wiederbeleben und Spezialrunden folgen in Phase 4.
 
 ## Features (Phase 1)
 
+- **Start mit der Faust:** Beim Spielstart wird das Inventar geleert (und bei Spielende
+  zurückgegeben). In Runde 1 haben Zombies nur ein halbes Herz und sterben mit einem Faustschlag.
 - **Rundensystem:** Zombies spawnen an festgelegten Spawnpunkten. Anzahl, Leben, Tempo und Schaden
   steigen pro Runde. Zombies tragen einen Helm und verbrennen deshalb tagsüber nicht. Andere
   Mobs (Tiere, Monster) werden während des Spiels entfernt. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
@@ -28,7 +30,7 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   aktiv, wenn die Tür offen ist. Spawnpunkte ohne Zone gehören zur Zone `start`.
 - **Wandwaffen:** Ein Block, an dem man per Rechtsklick eine bestimmte Waffe kauft. Hat man sie schon,
   kauft man Munition (32 Pfeile für Bogen/Armbrust). Gekaufte Waffen sind unzerstörbar.
-  Bis Phase 3 sind das Vanilla-Waffen (Schwerter, Äxte, Bogen, Armbrust, Dreizack ...).
+  Das können eigene Schusswaffen (z. B. `mczombies:pistol`) oder Vanilla-Waffen sein.
 - **Zufallskiste:** Mehrere mögliche Standorte, aktiv ist jeweils einer (Lichtstrahl-Partikel).
   Ein Dreh kostet 950 Punkte und gibt eine zufällige Waffe. Nach einigen Drehs kann die Kiste
   umziehen: Dann gibt es die Punkte zurück und sie steht woanders.
@@ -37,6 +39,33 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   10 Punkte (höchstens 500 pro Runde).
 - Schaut man auf ein kaufbares Element, steht in der Aktionsleiste, was es kostet.
 - Bei Spielende werden alle Türen wieder geschlossen und alle Fenster repariert.
+
+## Features (Phase 3)
+
+- **Sieben Schusswaffen** (Kreativinventar, Tab „Kampf“):
+
+  | Waffe | Item-ID | Besonderheit |
+  |---|---|---|
+  | Pistole | `mczombies:pistol` | Einzelschuss, 8 Schuss |
+  | Maschinenpistole | `mczombies:smg` | Dauerfeuer, sehr schnell, wenig Schaden |
+  | Sturmgewehr | `mczombies:assault_rifle` | Dauerfeuer, Allrounder |
+  | Leichtes MG | `mczombies:lmg` | Dauerfeuer, 100 Schuss, langes Nachladen, durchschlägt 2 Zombies |
+  | Schrotflinte | `mczombies:shotgun` | 8 Kugeln pro Schuss mit Streuung, kurze Reichweite |
+  | Scharfschützengewehr | `mczombies:sniper` | Sehr hoher Schaden, durchschlägt 4 Zombies, ×3 bei Kopftreffer |
+  | Raketenwerfer | `mczombies:rocket_launcher` | Explodiert beim Aufprall (Radius 4), Blöcke bleiben heil |
+
+- **Schießen:** Rechtsklick. Automatikwaffen feuern, solange die Taste gehalten wird.
+  Treffer sind sofort (Hitscan) und enden an Blöcken; Mitspieler werden nie getroffen.
+- **Munition:** Magazin + Reserve. **R** lädt nach (Taste in den Steuerungs-Optionen änderbar);
+  ein leeres Magazin wird automatisch nachgeladen. Wechselt man die Waffe, bricht das Nachladen ab.
+  Rechts unten zeigt das HUD Waffenname und „Magazin / Reserve“, der Balken unter dem Item den
+  Füllstand des Magazins.
+- **Kopftreffer:** Treffer auf Augenhöhe machen mehr Schaden (Faktor je Waffe) und bringen
+  beim Kill 100 statt 60 Punkte.
+- **Wandwaffen und Zufallskiste** geben die Schusswaffen voll geladen. Hat man die Waffe schon,
+  füllt ein Kauf an der Wand (Munitionspreis) bzw. ein Kisten-Treffer die Munition auf.
+- **Aufrüst-Maschine:** Rechtsklick mit einer Schusswaffe in der Hand für 5000 Punkte:
+  doppelter Schaden, 1,5× Magazin und Reserve, volle Munition, Glitzer und „(Verbessert)“ im Namen.
 
 ## Voraussetzungen
 
@@ -112,9 +141,12 @@ Alle Befehle brauchen Operator-Rechte (in Einzelspieler: Cheats an).
 | `/zombies wallweapon remove <nr>` / `wallweapon list` | Wandwaffe entfernen / anzeigen |
 | `/zombies box add [x y z]` | Kistenstandort (ohne Koordinaten: der Block, auf den du schaust) |
 | `/zombies box remove <nr>` / `box list` | Kistenstandort entfernen / anzeigen |
+| `/zombies upgrade add [x y z]` | Aufrüst-Maschine (ohne Koordinaten: der Block, auf den du schaust) |
+| `/zombies upgrade remove <nr>` / `upgrade list` | Aufrüst-Maschine entfernen / anzeigen |
 
 Die Map kann nur bearbeitet werden, wenn kein Spiel läuft. `/zombies spawn show` zeigt auch Türen
-(Flammen), Fenster (Funken), Wandwaffen (grün) und Kistenstandorte (Lichtstrahl).
+(Flammen), Fenster (Funken), Wandwaffen (grün), Kistenstandorte (Lichtstrahl) und
+Aufrüst-Maschinen (Zauberschrift).
 
 Die Map-Einstellungen werden pro Welt in `<Weltordner>/mczombies_map.json` gespeichert. Wer eine
 Map weitergibt, gibt die Spawnpunkte also automatisch mit.
@@ -133,7 +165,7 @@ Die wichtigsten Werte:
 | `zombiesBaseCount` / `zombiesPerRound` | 6 / 3 | Zombies in Runde 1 / zusätzlich pro Runde |
 | `zombiesExtraPlayerFactor` | 0.5 | +50 % Zombies pro weiterem Spieler |
 | `maxAliveZombies` | 24 | Maximal gleichzeitig lebende Zombies |
-| `healthBase` / `healthPerRound` | 8 / 4 | Leben in Runde 1 / zusätzlich pro Runde |
+| `healthBase` / `healthPerRound` | 1 / 4 | Leben in Runde 1 / zusätzlich pro Runde |
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
 | `speedBase` / `speedPerRound` / `speedMax` | 0.20 / 0.008 / 0.33 | Laufgeschwindigkeit |
 | `damageBase` / `damagePerRound` / `damageMax` | 2 / 0.25 / 10 | Schaden pro Schlag |
@@ -141,6 +173,10 @@ Die wichtigsten Werte:
 | `boxWeapons` | Liste | Waffen der Zufallskiste mit Gewichtung |
 | `pointsPerBoardRepair` / `windowRepairPointsCapPerRound` | 10 / 500 | Punkte fürs Reparieren |
 | `windowTearIntervalTicks` | 40 | So oft reißt ein Zombie ein Brett heraus (20 Ticks = 1 s) |
+| `guns` | je Waffe | Schaden, Magazin, Reserve, Feuerrate, Nachladezeit, Reichweite, Streuung, Kugeln, Dauerfeuer, Durchschlag, Explosionsradius, Kopftreffer-Faktor |
+| `upgradePrice` | 5000 | Preis an der Aufrüst-Maschine |
+| `upgradeDamageMultiplier` / `upgradeAmmoMultiplier` | 2.0 / 1.5 | Wirkung der Aufrüstung |
+| `startWithEmptyInventory` | true | Nur mit der Faust starten; Inventar kommt bei Spielende zurück |
 | `adventureModeDuringGame` | true | Spieler können die Map während des Spiels nicht abbauen |
 | `removeOtherMobsDuringGame` | true | Tiere und andere Monster werden während des Spiels entfernt |
 
@@ -155,10 +191,12 @@ src/main/java/de/knospenraucher/mczombies/     (Server + gemeinsamer Code)
 ├── config/                 Balancing-Werte (JSON)
 ├── event/                  Treffer, Kills, Down statt Tod
 ├── game/                   GameManager (Rundenlogik), Skalierung, Spielerdaten
-├── map/                    Spawnpunkte pro Welt
-└── network/                Paket für die HUD-Synchronisation
+├── map/                    Map-Daten pro Welt (Spawns, Türen, Fenster, Kisten ...)
+├── network/                Netzwerkpakete (HUD, Schießen/Nachladen)
+└── weapon/                 Schusswaffen: Items, Schuss- und Nachladelogik
 src/client/java/de/knospenraucher/mczombies/client/   (nur Client)
 ├── MCZombiesClient.java    Client-Einstiegspunkt
 ├── ClientGameState.java    Empfangener Spielzustand
-└── ZombiesHud.java         HUD-Anzeige
+├── GunInput.java           Rechtsklick/R an den Server schicken
+└── ZombiesHud.java         HUD-Anzeige (inkl. Munition)
 ```
