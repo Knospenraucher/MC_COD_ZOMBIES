@@ -3,8 +3,8 @@
 Eine Fabric-Mod für **Minecraft Java 26.3**: Spieler verteidigen sich in einer eigenen Map gegen
 Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
-> Aktueller Stand: **Phase 1 – Grundgerüst** (Rundensystem, Punkte, HUD, Game Over).
-> Türen, Wandwaffen, Zufallskiste, Waffen, Perks usw. folgen in späteren Phasen.
+> Aktueller Stand: **Phase 2 – Map-Mechaniken** (Türen, Wandwaffen, Zufallskiste, Fenster).
+> Eigene Schusswaffen, Upgrade-Maschine, Perks usw. folgen in späteren Phasen.
 
 ## Features (Phase 1)
 
@@ -20,6 +20,23 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   mit Statistik im Chat. (Wiederbeleben durch Mitspieler kommt in Phase 4.)
 - **Mehrspieler:** Die gesamte Spiellogik läuft auf dem Server, Clients bekommen den Zustand per
   eigenem Netzwerkpaket und zeigen ihn nur an.
+
+## Features (Phase 2)
+
+- **Kaufbare Türen/Barrieren:** Ein beliebiger Blockbereich verschwindet, wenn ein Spieler ihn per
+  Rechtsklick kauft. Eine Tür kann eine **Zone** freischalten: Spawnpunkte dieser Zone werden erst
+  aktiv, wenn die Tür offen ist. Spawnpunkte ohne Zone gehören zur Zone `start`.
+- **Wandwaffen:** Ein Block, an dem man per Rechtsklick eine bestimmte Waffe kauft. Hat man sie schon,
+  kauft man Munition (32 Pfeile für Bogen/Armbrust). Gekaufte Waffen sind unzerstörbar.
+  Bis Phase 3 sind das Vanilla-Waffen (Schwerter, Äxte, Bogen, Armbrust, Dreizack ...).
+- **Zufallskiste:** Mehrere mögliche Standorte, aktiv ist jeweils einer (Lichtstrahl-Partikel).
+  Ein Dreh kostet 950 Punkte und gibt eine zufällige Waffe. Nach einigen Drehs kann die Kiste
+  umziehen: Dann gibt es die Punkte zurück und sie steht woanders.
+- **Fenster-Barrikaden:** Ein Blockbereich aus „Brettern“. Zombies am Fenster reißen nach und nach
+  Bretter heraus. Wer am Fenster **schleicht**, setzt jede Sekunde ein Brett wieder ein und bekommt
+  10 Punkte (höchstens 500 pro Runde).
+- Schaut man auf ein kaufbares Element, steht in der Aktionsleiste, was es kostet.
+- Bei Spielende werden alle Türen wieder geschlossen und alle Fenster repariert.
 
 ## Voraussetzungen
 
@@ -86,6 +103,18 @@ Alle Befehle brauchen Operator-Rechte (in Einzelspieler: Cheats an).
 | `/zombies spawn show` | Spawnpunkte 15 s lang mit Partikeln anzeigen |
 | `/zombies playerspawn set [x y z]` | Startpunkt der Spieler setzen (auch Wiedereinstieg nach Down) |
 | `/zombies points <spieler> <anzahl>` | Punkte eines Teilnehmers setzen (zum Testen) |
+| `/zombies spawn add <x y z> <zone>` | Spawnpunkt, der erst mit der Zone `<zone>` aktiv wird |
+| `/zombies door add <name> <von> <bis> <preis> [zone]` | Blockbereich als kaufbare Tür anlegen (Blöcke müssen stehen) |
+| `/zombies door remove <name>` / `door list` | Tür entfernen / alle Türen anzeigen |
+| `/zombies window add <von> <bis>` | Blockbereich als Fenster-Barrikade anlegen (Bretter müssen stehen) |
+| `/zombies window remove <nr>` / `window list` | Fenster entfernen / anzeigen |
+| `/zombies wallweapon add <item> <preis> [munitionspreis]` | Den Block, auf den du schaust, zur Wandwaffe machen |
+| `/zombies wallweapon remove <nr>` / `wallweapon list` | Wandwaffe entfernen / anzeigen |
+| `/zombies box add [x y z]` | Kistenstandort (ohne Koordinaten: der Block, auf den du schaust) |
+| `/zombies box remove <nr>` / `box list` | Kistenstandort entfernen / anzeigen |
+
+Die Map kann nur bearbeitet werden, wenn kein Spiel läuft. `/zombies spawn show` zeigt auch Türen
+(Flammen), Fenster (Funken), Wandwaffen (grün) und Kistenstandorte (Lichtstrahl).
 
 Die Map-Einstellungen werden pro Welt in `<Weltordner>/mczombies_map.json` gespeichert. Wer eine
 Map weitergibt, gibt die Spawnpunkte also automatisch mit.
@@ -108,6 +137,10 @@ Die wichtigsten Werte:
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
 | `speedBase` / `speedPerRound` / `speedMax` | 0.20 / 0.008 / 0.33 | Laufgeschwindigkeit |
 | `damageBase` / `damagePerRound` / `damageMax` | 2 / 0.25 / 10 | Schaden pro Schlag |
+| `boxPrice` / `boxMoveChance` | 950 / 0.2 | Preis eines Kisten-Drehs / Umzugschance pro Dreh |
+| `boxWeapons` | Liste | Waffen der Zufallskiste mit Gewichtung |
+| `pointsPerBoardRepair` / `windowRepairPointsCapPerRound` | 10 / 500 | Punkte fürs Reparieren |
+| `windowTearIntervalTicks` | 40 | So oft reißt ein Zombie ein Brett heraus (20 Ticks = 1 s) |
 | `adventureModeDuringGame` | true | Spieler können die Map während des Spiels nicht abbauen |
 | `removeOtherMobsDuringGame` | true | Tiere und andere Monster werden während des Spiels entfernt |
 
