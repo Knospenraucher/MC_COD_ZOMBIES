@@ -1,0 +1,10 @@
+{
+  "item.mczombies.pistol": "Pistol",
+  "item.mczombies.smg": "SMG",
+  "item.mczombies.assault_rifle": "Assault Rifle",
+  "item.mczombies.lmg": "LMG",
+  "item.mczombies.shotgun": "Shotgun",
+  "item.mczombies.sniper": "Sniper Rifle",
+  "item.mczombies.rocket_launcher": "Rocket Launcher",
+  "key.mczombies.reload": "Reload weapon"
+}

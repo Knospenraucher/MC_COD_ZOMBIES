@@ -29,7 +29,9 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.entity.EntityTypeTest;
@@ -164,6 +166,15 @@ public class GameManager {
 		for (ServerPlayer player : participants) {
 			players.put(player.getUUID(), new PlayerData(
 					player.getName().getString(), config.startingPoints, currentGameType(player)));
+			if (config.startWithEmptyInventory) {
+				// Inventar sichern und leeren: Alle starten nur mit der Faust.
+				PlayerData data = players.get(player.getUUID());
+				Inventory inventory = player.getInventory();
+				for (int i = 0; i < inventory.getContainerSize(); i++) {
+					data.savedInventory.add(inventory.getItem(i).copy());
+				}
+				inventory.clearContent();
+			}
 			preparePlayer(player);
 		}
 
@@ -332,10 +343,14 @@ public class GameManager {
 		setAttribute(zombie, Attributes.FOLLOW_RANGE, ZombiesConfig.get().followRange);
 		// Keine Vanilla-Verstärkungen, sonst stimmt die Zombie-Anzahl nicht.
 		setAttribute(zombie, Attributes.SPAWN_REINFORCEMENTS_CHANCE, 0.0);
+		// Zombies haben von Haus aus 2 Rüstungspunkte; die Härte kommt bei uns nur über das Leben.
+		setAttribute(zombie, Attributes.ARMOR, 0.0);
 		zombie.setHealth((float) health);
 		// Ein unzerstörbarer Helm verhindert, dass Zombies tagsüber verbrennen.
 		ItemStack helmet = new ItemStack(Items.LEATHER_HELMET);
 		helmet.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
+		// Der Helm soll keine Rüstung geben, sonst überlebt ein Runde-1-Zombie den Faustschlag.
+		helmet.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
 		zombie.setItemSlot(EquipmentSlot.HEAD, helmet);
 		zombie.setDropChance(EquipmentSlot.HEAD, 0.0F);
 
@@ -531,6 +546,15 @@ public class GameManager {
 			if (player != null) {
 				player.setGameMode(entry.getValue().previousGameType);
 				player.setHealth(player.getMaxHealth());
+				List<ItemStack> saved = entry.getValue().savedInventory;
+				if (!saved.isEmpty()) {
+					// Im Spiel gekaufte Waffen verschwinden, das alte Inventar kommt zurück.
+					Inventory inventory = player.getInventory();
+					inventory.clearContent();
+					for (int i = 0; i < saved.size() && i < inventory.getContainerSize(); i++) {
+						inventory.setItem(i, saved.get(i));
+					}
+				}
 			}
 		}
 	}
@@ -668,6 +692,10 @@ public class GameManager {
 		for (BlockPos box : map.getBoxLocations()) {
 			overworld.sendParticles(ParticleTypes.END_ROD,
 					box.getX() + 0.5, box.getY() + 1.2, box.getZ() + 0.5, 4, 0.2, 0.4, 0.2, 0.0);
+		}
+		for (BlockPos machine : map.getUpgradeMachines()) {
+			overworld.sendParticles(ParticleTypes.ENCHANT,
+					machine.getX() + 0.5, machine.getY() + 1.2, machine.getZ() + 0.5, 8, 0.3, 0.4, 0.3, 0.5);
 		}
 		BlockPos playerSpawn = map.getPlayerSpawn();
 		if (playerSpawn != null) {

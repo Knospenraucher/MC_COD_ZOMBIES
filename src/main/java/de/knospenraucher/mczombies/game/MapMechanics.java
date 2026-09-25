@@ -8,6 +8,7 @@ import de.knospenraucher.mczombies.map.MapData.Door;
 import de.knospenraucher.mczombies.map.MapData.Region;
 import de.knospenraucher.mczombies.map.MapData.WallWeapon;
 import de.knospenraucher.mczombies.map.MapData.Window;
+import de.knospenraucher.mczombies.weapon.GunItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -17,6 +18,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.Entity;
@@ -37,8 +40,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Laufzeit-Logik der Map-Elemente aus Phase 2:
- * kaufbare Türen (mit Zonen), Wandwaffen, Zufallskiste und Fenster-Barrikaden.
+ * Laufzeit-Logik der Map-Elemente:
+ * kaufbare Türen (mit Zonen), Wandwaffen, Zufallskiste, Fenster-Barrikaden
+ * und die Aufrüst-Maschine (Phase 3).
  * <p>
  * Die Definitionen stehen in {@link MapData}; diese Klasse kümmert sich darum,
  * was während eines Spiels mit ihnen passiert.
@@ -136,6 +140,10 @@ public class MapMechanics {
 				level.sendParticles(ParticleTypes.END_ROD, box.getX() + 0.5, box.getY() + 1.5, box.getZ() + 0.5,
 						3, 0.1, 1.0, 0.1, 0.0);
 			}
+			for (BlockPos machine : map.getUpgradeMachines()) {
+				level.sendParticles(ParticleTypes.ENCHANT, machine.getX() + 0.5, machine.getY() + 1.3, machine.getZ() + 0.5,
+						4, 0.3, 0.3, 0.3, 0.3);
+			}
 		}
 		if (ticks % HINT_INTERVAL == 0) {
 			for (ServerPlayer player : alivePlayers) {
@@ -160,6 +168,10 @@ public class MapMechanics {
 		WallWeapon weapon = map.getWallWeaponAt(pos);
 		if (weapon != null) {
 			buyWallWeapon(player, weapon);
+			return true;
+		}
+		if (map.getUpgradeMachines().contains(pos)) {
+			useUpgradeMachine(level, player, pos);
 			return true;
 		}
 		List<BlockPos> boxes = map.getBoxLocations();
@@ -194,6 +206,8 @@ public class MapMechanics {
 						? Component.literal("Rechtsklick: Munition für " + name + " [" + weapon.ammoPrice + " Punkte]")
 						: Component.literal("Rechtsklick: " + name + " kaufen [" + weapon.price + " Punkte]");
 			}
+		} else if (map.getUpgradeMachines().contains(pos)) {
+			hint = Component.literal("Rechtsklick: Waffe in der Hand aufrüsten [" + ZombiesConfig.get().upgradePrice + " Punkte]");
 		} else if (pos.equals(activeBox())) {
 			hint = Component.literal("Rechtsklick: Zufallskiste [" + ZombiesConfig.get().boxPrice + " Punkte]");
 		} else if (windowNear(player, 2.5) != null) {
@@ -248,7 +262,7 @@ public class MapMechanics {
 				notEnoughPoints(player, weapon.ammoPrice);
 				return;
 			}
-			giveAmmo(player);
+			giveAmmo(player, item);
 			player.sendSystemMessage(Component.literal("Munition gekauft.").withStyle(ChatFormatting.GREEN), true);
 			return;
 		}
@@ -257,6 +271,36 @@ public class MapMechanics {
 			return;
 		}
 		giveWeapon(player, item);
+	}
+
+	// ================================================================ Aufrüst-Maschine
+
+	/** Rüstet die Schusswaffe in der Hand auf: mehr Schaden, mehr Munition, voll aufgeladen. */
+	private void useUpgradeMachine(ServerLevel level, ServerPlayer player, BlockPos pos) {
+		ItemStack stack = player.getMainHandItem();
+		if (!(stack.getItem() instanceof GunItem gun)) {
+			player.sendSystemMessage(Component.literal("Halte eine Schusswaffe in der Hand.").withStyle(ChatFormatting.GRAY), true);
+			return;
+		}
+		if (GunItem.isUpgraded(stack)) {
+			player.sendSystemMessage(Component.literal("Diese Waffe ist schon aufgerüstet.").withStyle(ChatFormatting.GRAY), true);
+			return;
+		}
+		int price = ZombiesConfig.get().upgradePrice;
+		if (!game.spendPoints(player, price)) {
+			notEnoughPoints(player, price);
+			return;
+		}
+		GunItem.setUpgraded(stack);
+		gun.refill(stack);
+		stack.set(DataComponents.ITEM_NAME, Component.translatable("item.mczombies." + gun.key())
+				.append(" (Verbessert)").withStyle(ChatFormatting.LIGHT_PURPLE));
+		level.playSound(null, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
+				SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.0F, 1.2F);
+		level.sendParticles(ParticleTypes.ENCHANT, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5,
+				40, 0.4, 0.5, 0.4, 1.0);
+		game.broadcast(Component.literal(player.getName().getString() + " hat eine Waffe aufgerüstet!")
+				.withStyle(ChatFormatting.LIGHT_PURPLE));
 	}
 
 	// ================================================================ Zufallskiste
@@ -403,8 +447,9 @@ public class MapMechanics {
 		return BuiltInRegistries.ITEM.getOptional(key).filter(item -> item != Items.AIR).orElse(null);
 	}
 
+	/** Waffen, für die man Munition kaufen kann. */
 	private static boolean isRanged(Item item) {
-		return item == Items.BOW || item == Items.CROSSBOW;
+		return item instanceof GunItem || item == Items.BOW || item == Items.CROSSBOW;
 	}
 
 	private static boolean hasItem(ServerPlayer player, Item item) {
@@ -416,19 +461,38 @@ public class MapMechanics {
 		return false;
 	}
 
-	/** Gibt eine unzerstörbare Waffe (bei Fernkampf mit Pfeilen). */
+	/**
+	 * Gibt eine unzerstörbare Waffe (Bogen/Armbrust mit Pfeilen, Schusswaffen voll geladen).
+	 * Hat der Spieler die Schusswaffe schon, wird stattdessen ihre Munition aufgefüllt.
+	 */
 	private static void giveWeapon(ServerPlayer player, Item item) {
 		ItemStack stack = new ItemStack(item);
+		if (item instanceof GunItem && hasItem(player, item)) {
+			giveAmmo(player, item);
+			player.sendSystemMessage(Component.literal("Munition für " + stack.getHoverName().getString() + " aufgefüllt!")
+					.withStyle(ChatFormatting.GREEN), true);
+			return;
+		}
 		stack.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
 		give(player, stack);
-		if (isRanged(item)) {
-			giveAmmo(player);
+		if (item == Items.BOW || item == Items.CROSSBOW) {
+			giveAmmo(player, item);
 		}
 		player.sendSystemMessage(Component.literal("Du hast " + stack.getHoverName().getString() + " bekommen!")
 				.withStyle(ChatFormatting.GREEN), true);
 	}
 
-	private static void giveAmmo(ServerPlayer player) {
+	/** Schusswaffen: Magazin und Reserve auffüllen; Bogen/Armbrust: Pfeile geben. */
+	private static void giveAmmo(ServerPlayer player, Item item) {
+		if (item instanceof GunItem gun) {
+			for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+				ItemStack stack = player.getInventory().getItem(i);
+				if (stack.is(item)) {
+					gun.refill(stack);
+				}
+			}
+			return;
+		}
 		give(player, new ItemStack(Items.ARROW, ZombiesConfig.get().arrowsPerAmmo));
 	}
 

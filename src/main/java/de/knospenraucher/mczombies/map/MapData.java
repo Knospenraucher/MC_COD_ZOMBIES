@@ -122,6 +122,7 @@ public class MapData {
 		List<Window> windows = new ArrayList<>();
 		List<WallWeapon> wallWeapons = new ArrayList<>();
 		List<Pos> boxLocations = new ArrayList<>();
+		List<Pos> upgradeMachines = new ArrayList<>();
 
 		/** Ältere Dateien kennen manche Listen noch nicht. */
 		void fillMissing() {
@@ -130,6 +131,7 @@ public class MapData {
 			if (windows == null) windows = new ArrayList<>();
 			if (wallWeapons == null) wallWeapons = new ArrayList<>();
 			if (boxLocations == null) boxLocations = new ArrayList<>();
+			if (upgradeMachines == null) upgradeMachines = new ArrayList<>();
 		}
 	}
 
@@ -303,5 +305,29 @@ public class MapData {
 
 	public Pos removeBoxLocation(int nr) {
 		return removeAt(data.boxLocations, nr);
+	}
+
+	// ================================================================ Aufrüst-Maschine
+
+	public List<BlockPos> getUpgradeMachines() {
+		List<BlockPos> result = new ArrayList<>();
+		for (Pos p : data.upgradeMachines) {
+			result.add(p.toBlockPos());
+		}
+		return result;
+	}
+
+	/** @return false, wenn dort schon eine Maschine steht */
+	public boolean addUpgradeMachine(BlockPos pos) {
+		if (getUpgradeMachines().contains(pos)) {
+			return false;
+		}
+		data.upgradeMachines.add(new Pos(pos));
+		save();
+		return true;
+	}
+
+	public Pos removeUpgradeMachine(int nr) {
+		return removeAt(data.upgradeMachines, nr);
 	}
 }

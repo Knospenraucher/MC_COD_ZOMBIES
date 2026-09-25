@@ -2,15 +2,18 @@ package de.knospenraucher.mczombies.client;
 
 import de.knospenraucher.mczombies.game.GameState;
 import de.knospenraucher.mczombies.network.HudSyncPayload;
+import de.knospenraucher.mczombies.weapon.GunItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Zeichnet das Spiel-HUD:
  * links oben die Runde (groß, rot) und darunter Zombies/Countdown,
- * rechts oben die Punkteliste aller Spieler.
+ * rechts oben die Punkteliste aller Spieler,
+ * rechts unten die Munition der Waffe in der Hand (auch außerhalb eines Spiels).
  */
 public final class ZombiesHud {
 	// Farben im ARGB-Format (Alpha muss gesetzt sein, sonst ist der Text unsichtbar).
@@ -26,11 +29,13 @@ public final class ZombiesHud {
 
 	public static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
 		Minecraft mc = Minecraft.getInstance();
+		Font font = mc.font;
+		renderAmmo(graphics, mc, font);
+
 		GameState state = ClientGameState.state();
 		if (state == GameState.IDLE) {
 			return;
 		}
-		Font font = mc.font;
 
 		// ---- Runde (doppelt so groß)
 		String roundText = ClientGameState.round() > 0 ? String.valueOf(ClientGameState.round()) : "-";
@@ -65,5 +70,31 @@ public final class ZombiesHud {
 			graphics.text(font, points, right - pointsWidth, y, GOLD, true);
 			y += font.lineHeight + 3;
 		}
+	}
+
+	/** Munitionsanzeige "Magazin / Reserve" mit Waffennamen darüber. */
+	private static void renderAmmo(GuiGraphicsExtractor graphics, Minecraft mc, Font font) {
+		if (mc.player == null) {
+			return;
+		}
+		ItemStack stack = mc.player.getMainHandItem();
+		if (!(stack.getItem() instanceof GunItem gun)) {
+			return;
+		}
+		int mag = gun.getMag(stack);
+		String ammo = GunItem.isReloading(stack) ? "Nachladen..." : mag + " / " + gun.getReserve(stack);
+		String name = stack.getHoverName().getString();
+		int right = graphics.guiWidth() - 10;
+		int bottom = graphics.guiHeight() - 12;
+
+		graphics.pose().pushMatrix();
+		graphics.pose().scale(2.0F, 2.0F);
+		int ammoWidth = font.width(ammo);
+		int ammoColor = GunItem.isReloading(stack) ? GRAY : mag == 0 ? RED : WHITE;
+		graphics.text(font, ammo, (right - ammoWidth * 2) / 2, (bottom - font.lineHeight * 2) / 2, ammoColor, true);
+		graphics.pose().popMatrix();
+
+		graphics.text(font, name, right - font.width(name), bottom - font.lineHeight * 2 - font.lineHeight - 4,
+				GunItem.isUpgraded(stack) ? 0xFFC060FF : GOLD, true);
 	}
 }

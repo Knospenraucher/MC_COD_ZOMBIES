@@ -3,6 +3,7 @@ package de.knospenraucher.mczombies.event;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.game.GameManager;
 import de.knospenraucher.mczombies.game.PlayerData;
+import de.knospenraucher.mczombies.weapon.GunManager;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -83,13 +84,17 @@ public final class CombatEvents {
 		return source.getEntity() instanceof ServerPlayer player ? player : null;
 	}
 
-	/** Nahkampf: der Spieler hat direkt zugeschlagen (kein Projektil). */
+	/** Nahkampf: der Spieler hat direkt zugeschlagen (kein Projektil, kein Schuss). */
 	private static boolean isMelee(ServerPlayer player, DamageSource source) {
-		return source.getDirectEntity() == player;
+		return GunManager.currentShot() == null && source.getDirectEntity() == player;
 	}
 
-	/** Kopftreffer: ein Projektil traf auf Höhe der Augen oder darüber. */
+	/** Kopftreffer: Schuss bzw. Projektil traf auf Höhe der Augen oder darüber. */
 	private static boolean isHeadshot(LivingEntity target, DamageSource source) {
+		GunManager.Shot shot = GunManager.currentShot();
+		if (shot != null) {
+			return shot.headshot();
+		}
 		Entity direct = source.getDirectEntity();
 		if (!(direct instanceof Projectile projectile)) {
 			return false;

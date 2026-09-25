@@ -1,0 +1,10 @@
+{
+  "item.mczombies.pistol": "Pistole",
+  "item.mczombies.smg": "Maschinenpistole",
+  "item.mczombies.assault_rifle": "Sturmgewehr",
+  "item.mczombies.lmg": "Leichtes MG",
+  "item.mczombies.shotgun": "Schrotflinte",
+  "item.mczombies.sniper": "Scharfschützengewehr",
+  "item.mczombies.rocket_launcher": "Raketenwerfer",
+  "key.mczombies.reload": "Waffe nachladen"
+}

@@ -38,6 +38,7 @@ import java.util.List;
  * /zombies window add &lt;von&gt; &lt;bis&gt; | remove &lt;nr&gt; | list
  * /zombies wallweapon add &lt;item&gt; &lt;preis&gt; [munitionspreis] | remove &lt;nr&gt; | list
  * /zombies box add [pos] | remove &lt;nr&gt; | list
+ * /zombies upgrade add [pos] | remove &lt;nr&gt; | list
  * </pre>
  */
 public final class ZombiesCommand {
@@ -111,7 +112,15 @@ public final class ZombiesCommand {
 										.executes(ctx -> addBox(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "pos")))))
 						.then(Commands.literal("remove")
 								.then(Commands.argument("nr", IntegerArgumentType.integer(1)).executes(ZombiesCommand::removeBox)))
-						.then(Commands.literal("list").executes(ZombiesCommand::listBoxes))));
+						.then(Commands.literal("list").executes(ZombiesCommand::listBoxes)))
+				.then(Commands.literal("upgrade")
+						.then(Commands.literal("add")
+								.executes(ctx -> addUpgrade(ctx, lookedAtBlock(ctx)))
+								.then(Commands.argument("pos", BlockPosArgument.blockPos())
+										.executes(ctx -> addUpgrade(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "pos")))))
+						.then(Commands.literal("remove")
+								.then(Commands.argument("nr", IntegerArgumentType.integer(1)).executes(ZombiesCommand::removeUpgrade)))
+						.then(Commands.literal("list").executes(ZombiesCommand::listUpgrades))));
 	}
 
 	// ---------------------------------------------------------------- Spielsteuerung
@@ -461,6 +470,50 @@ public final class ZombiesCommand {
 			ctx.getSource().sendSuccess(() -> Component.literal(line), false);
 		}
 		return boxes.size();
+	}
+
+	// ---------------------------------------------------------------- Aufrüst-Maschine
+
+	private static int addUpgrade(CommandContext<CommandSourceStack> ctx, BlockPos pos) {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		if (!map.addUpgradeMachine(pos)) {
+			ctx.getSource().sendFailure(Component.literal("Dort steht schon eine Aufrüst-Maschine."));
+			return 0;
+		}
+		int nr = map.getUpgradeMachines().size();
+		ctx.getSource().sendSuccess(() -> Component.literal("Aufrüst-Maschine #" + nr + " gesetzt: " + format(pos)), true);
+		return 1;
+	}
+
+	private static int removeUpgrade(CommandContext<CommandSourceStack> ctx) {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		int nr = IntegerArgumentType.getInteger(ctx, "nr");
+		if (map.removeUpgradeMachine(nr) == null) {
+			ctx.getSource().sendFailure(Component.literal("Aufrüst-Maschine #" + nr + " existiert nicht."));
+			return 0;
+		}
+		ctx.getSource().sendSuccess(() -> Component.literal("Aufrüst-Maschine #" + nr + " entfernt."), true);
+		return 1;
+	}
+
+	private static int listUpgrades(CommandContext<CommandSourceStack> ctx) {
+		MapData map = map(ctx);
+		if (map == null) {
+			return 0;
+		}
+		List<BlockPos> machines = map.getUpgradeMachines();
+		ctx.getSource().sendSuccess(() -> Component.literal(machines.size() + " Aufrüst-Maschinen:").withStyle(ChatFormatting.GOLD), false);
+		for (int i = 0; i < machines.size(); i++) {
+			String line = " #" + (i + 1) + ": " + format(machines.get(i));
+			ctx.getSource().sendSuccess(() -> Component.literal(line), false);
+		}
+		return machines.size();
 	}
 
 	// ---------------------------------------------------------------- Hilfen

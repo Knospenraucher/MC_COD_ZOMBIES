@@ -9,5 +9,6 @@ public final class ModNetworking {
 
 	public static void registerPayloads() {
 		PayloadTypeRegistry.clientboundPlay().register(HudSyncPayload.TYPE, HudSyncPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(GunActionPayload.TYPE, GunActionPayload.CODEC);
 	}
 }

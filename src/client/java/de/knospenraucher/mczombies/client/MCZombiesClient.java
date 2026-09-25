@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 
-/** Client-Einstiegspunkt: empfängt den Spielzustand und zeichnet das HUD. */
+/** Client-Einstiegspunkt: empfängt den Spielzustand, zeichnet das HUD und steuert die Waffen. */
 public class MCZombiesClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
@@ -16,5 +16,6 @@ public class MCZombiesClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientGameState.clear());
 
 		HudElementRegistry.addLast(MCZombies.id("hud"), ZombiesHud::render);
+		GunInput.register();
 	}
 }
