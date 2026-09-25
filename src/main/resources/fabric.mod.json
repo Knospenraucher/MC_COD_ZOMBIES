@@ -1,0 +1,22 @@
+{
+	"schemaVersion": 1,
+	"id": "mczombies",
+	"version": "${version}",
+	"name": "MC Zombies: Untoten-Wellen",
+	"description": "Rundenbasierter Wellen-Überlebensmodus gegen Zombies mit Punkten, HUD und Map-Setup per Befehl.",
+	"authors": ["Knospenraucher"],
+	"contact": {
+		"sources": "https://github.com/Knospenraucher/MC_COD_ZOMBIES"
+	},
+	"environment": "*",
+	"entrypoints": {
+		"main": ["de.knospenraucher.mczombies.MCZombies"],
+		"client": ["de.knospenraucher.mczombies.client.MCZombiesClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.17.0",
+		"minecraft": "~1.21.10",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
