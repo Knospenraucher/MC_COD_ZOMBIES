@@ -9,7 +9,8 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 ## Features (Phase 1)
 
 - **Rundensystem:** Zombies spawnen an festgelegten Spawnpunkten. Anzahl, Leben, Tempo und Schaden
-  steigen pro Runde. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
+  steigen pro Runde. Zombies tragen einen Helm und verbrennen deshalb tagsüber nicht. Andere
+  Mobs (Tiere, Monster) werden während des Spiels entfernt. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
 - **Punkte:** 10 pro Treffer, 60 pro Kill, 100 für einen Kopftreffer-Kill (Projektil auf Kopfhöhe),
   130 für einen Nahkampf-Kill. Jeder Spieler startet mit 500 Punkten. Alles einstellbar.
 - **HUD:** Rundenzahl groß links oben, darunter verbleibende Zombies bzw. Countdown, rechts oben die
@@ -108,6 +109,7 @@ Die wichtigsten Werte:
 | `speedBase` / `speedPerRound` / `speedMax` | 0.20 / 0.008 / 0.33 | Laufgeschwindigkeit |
 | `damageBase` / `damagePerRound` / `damageMax` | 2 / 0.25 / 10 | Schaden pro Schlag |
 | `adventureModeDuringGame` | true | Spieler können die Map während des Spiels nicht abbauen |
+| `removeOtherMobsDuringGame` | true | Tiere und andere Monster werden während des Spiels entfernt |
 
 Nach dem Ändern `/zombies reload` ausführen.
 

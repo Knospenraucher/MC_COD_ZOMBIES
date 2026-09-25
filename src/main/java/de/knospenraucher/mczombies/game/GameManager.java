@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -17,17 +18,21 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
+import net.minecraft.util.Unit;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.entity.EntityTypeTest;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,6 +55,7 @@ public class GameManager {
 
 	private static final int HUD_SYNC_INTERVAL = 10;
 	private static final int RETARGET_INTERVAL = 40;
+	private static final int MOB_SWEEP_INTERVAL = 20;
 
 	private static GameManager instance;
 
@@ -143,6 +149,7 @@ public class GameManager {
 		ZombiesConfig config = ZombiesConfig.get();
 		level = startLevel;
 		removeLeftoverZombies();
+		removeOtherMobs();
 		players.clear();
 		aliveZombies.clear();
 		round = 0;
@@ -203,6 +210,9 @@ public class GameManager {
 			}
 		}
 
+		if (isRunning() && ticks % MOB_SWEEP_INTERVAL == 0) {
+			removeOtherMobs();
+		}
 		if (isRunning() && countAlivePlayers() == 0) {
 			gameOver();
 		}
@@ -309,9 +319,11 @@ public class GameManager {
 		// Keine Vanilla-Verstärkungen, sonst stimmt die Zombie-Anzahl nicht.
 		setAttribute(zombie, Attributes.SPAWN_REINFORCEMENTS_CHANCE, 0.0);
 		zombie.setHealth((float) health);
-		// Zombies sollen tagsüber nicht verbrennen.
-		zombie.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE,
-				MobEffectInstance.INFINITE_DURATION, 0, false, false));
+		// Ein unzerstörbarer Helm verhindert, dass Zombies tagsüber verbrennen.
+		ItemStack helmet = new ItemStack(Items.LEATHER_HELMET);
+		helmet.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
+		zombie.setItemSlot(EquipmentSlot.HEAD, helmet);
+		zombie.setDropChance(EquipmentSlot.HEAD, 0.0F);
 
 		if (!level.addFreshEntity(zombie)) {
 			return false;
@@ -395,6 +407,19 @@ public class GameManager {
 		}
 		for (Zombie zombie : level.getEntities(EntityTypes.ZOMBIE, z -> z.entityTags().contains(ZOMBIE_TAG))) {
 			zombie.discard();
+		}
+	}
+
+	/**
+	 * Entfernt alle Mobs (Kühe, Skelette, Creeper ...) außer unseren Rundenzombies,
+	 * damit während des Spiels nur Zombies auf der Map sind.
+	 */
+	private void removeOtherMobs() {
+		if (level == null || !ZombiesConfig.get().removeOtherMobsDuringGame) {
+			return;
+		}
+		for (Mob mob : level.getEntities(EntityTypeTest.forClass(Mob.class), mob -> !isRoundZombie(mob))) {
+			mob.discard();
 		}
 	}
 

@@ -91,6 +91,8 @@ public class ZombiesConfig {
 	// ---------------------------------------------------------------- Spieler
 	/** Spieler während des Spiels in den Abenteuermodus setzen (verhindert Abbauen der Map). */
 	public boolean adventureModeDuringGame = true;
+	/** Andere Mobs (Tiere, Monster) während des Spiels aus der Welt entfernen. */
+	public boolean removeOtherMobsDuringGame = true;
 
 	public static ZombiesConfig get() {
 		return instance;
