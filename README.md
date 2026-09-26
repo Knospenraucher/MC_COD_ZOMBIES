@@ -8,8 +8,12 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
 ## Features (Phase 1)
 
-- **Start mit der Faust:** Beim Spielstart wird das Inventar geleert (und bei Spielende
-  zurückgegeben). Zombies haben ihr Leben aus Black Ops III (Runde 1: 150, dann +100 pro Runde, ab Runde 10 ×1,1); ein Faustschlag macht 150 wie das Messer.
+- **Start mit der MR6:** Beim Spielstart wird das Inventar geleert (und bei Spielende
+  zurückgegeben); jeder bekommt die MR6 voll geladen (Config `startingWeapon`).
+  Zombies haben ihr Leben aus Black Ops III (Runde 1: 150, dann +100 pro Runde, ab Runde 10 ×1,1).
+- **Messer auf V:** mit jeder Waffe in der Hand, 150 Schaden wie in BO3, Nahkampf-Kill 130 Punkte.
+  Steht ein Zombie knapp außer Reichweite (bis 4 Blöcke) vor dir, machst du einen Ausfallschritt.
+  Ein gezeichnetes Kampfmesser schwingt dabei durchs Bild. Taste in den Steuerungs-Optionen änderbar.
 - **Rundensystem:** Zombies spawnen an festgelegten Spawnpunkten. Anzahl, Leben, Tempo und Schaden
   steigen pro Runde. Zombies tragen einen Helm und verbrennen deshalb tagsüber nicht. Andere
   Mobs (Tiere, Monster) werden während des Spiels entfernt. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
@@ -237,7 +241,8 @@ Die wichtigsten Werte:
 | `guns` | je Waffe | Schaden, Magazin, Reserve, Feuerrate, Nachladezeit, Reichweite, Streuung, Kugeln, Dauerfeuer, Durchschlag, Explosionsradius, Kopftreffer-Faktor |
 | `upgradePrice` | 5000 | Preis an der Aufrüst-Maschine |
 | `upgradeDamageMultiplier` / `upgradeAmmoMultiplier` | 2.0 / 1.5 | Wirkung der Aufrüstung, nur für Waffen ohne eigene Pack-a-Punch-Werte |
-| `startWithEmptyInventory` | true | Nur mit der Faust starten; Inventar kommt bei Spielende zurück |
+| `startWithEmptyInventory` | true | Mit leerem Inventar starten; Inventar kommt bei Spielende zurück |
+| `startingWeapon` | `mczombies:mr6` | Startwaffe (leer = keine) |
 | `adventureModeDuringGame` | true | Spieler können die Map während des Spiels nicht abbauen |
 | `removeOtherMobsDuringGame` | true | Tiere und andere Monster werden während des Spiels entfernt |
 
