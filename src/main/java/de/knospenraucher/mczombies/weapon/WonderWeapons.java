@@ -78,8 +78,8 @@ final class WonderWeapons {
 				continue;
 			}
 			GunManager.hurt(level, player, target, damage, false);
-			// knockback() stößt entgegen der übergebenen Richtung weg
-			target.knockback(upgraded ? 3.0 : 2.0, -offset.x, -offset.z);
+			Vec3 push = offset.normalize().scale(upgraded ? 3.0 : 2.0);
+			target.push(push.x, 0.6, push.z);
 		}
 		level.playSound(null, eye.x, eye.y, eye.z, SoundEvents.WIND_CHARGE_BURST, SoundSource.PLAYERS, 2.0F, 0.6F);
 	}
