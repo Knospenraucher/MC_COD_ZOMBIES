@@ -3,6 +3,7 @@ package de.knospenraucher.mczombies.event;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.game.GameManager;
 import de.knospenraucher.mczombies.game.PlayerData;
+import de.knospenraucher.mczombies.game.ZombieAttacks;
 import de.knospenraucher.mczombies.weapon.GunManager;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +21,12 @@ public final class CombatEvents {
 	}
 
 	public static void register() {
+		// Rundenzombies schlagen nicht per Vanilla-Nahkampf zu (der trifft sofort bei Berührung),
+		// sondern mit Ausholzeit über ZombieAttacks.
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
+				!(entity instanceof ServerPlayer) || !GameManager.isRoundZombie(source.getEntity())
+						|| ZombieAttacks.isOwnAttack());
+
 		// Spieler sterben während eines Spiels nicht, sondern gehen "down".
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
 			GameManager game = GameManager.get();

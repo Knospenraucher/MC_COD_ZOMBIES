@@ -96,10 +96,27 @@ public class ZombiesConfig {
 	 */
 	public double meleeDamageScale = 150.0;
 
-	/** Laufgeschwindigkeit in Runde 1 (Vanilla-Zombie: 0.23). */
+	/** Nur noch Rückfallwerte; das Tempo hängt jetzt von der Zombie-Art ab (siehe walkerSpeed/runnerSpeed). */
 	public double speedBase = 0.20;
 	public double speedPerRound = 0.008;
 	public double speedMax = 0.33;
+
+	/** Laufgeschwindigkeit der Schlenderer (Vanilla-Zombie: 0.23). */
+	public double walkerSpeed = 0.17;
+	/** Laufgeschwindigkeit der Läufer (etwa wie Schnelligkeit II). */
+	public double runnerSpeed = 0.30;
+	/** Ab dieser Runde gibt es Läufer ... */
+	public int runnersFromRound = 3;
+	/** ... pro Runde steigt ihr Anteil um so viel (0.15 = 15 %) ... */
+	public double runnerChancePerRound = 0.15;
+	/** ... bis höchstens so viel. */
+	public double runnerChanceMax = 0.9;
+	/** Schlenderer: Ausholzeit bis zum Treffer und Pause bis zum nächsten Schlag (20 Ticks = 1 s). */
+	public int walkerAttackWindupTicks = 16;
+	public int walkerAttackCooldownTicks = 24;
+	/** Läufer holen schneller aus und schlagen öfter zu. */
+	public int runnerAttackWindupTicks = 8;
+	public int runnerAttackCooldownTicks = 14;
 
 	/**
 	 * Angriffsschaden der Zombies. In BO3 macht ein Schlag 50 von 150 Leben, also ist man nach

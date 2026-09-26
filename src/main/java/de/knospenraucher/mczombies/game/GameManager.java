@@ -295,6 +295,7 @@ public class GameManager {
 		if (ticks % RETARGET_INTERVAL == 0) {
 			retargetZombies();
 		}
+		ZombieAttacks.tick(level, aliveZombies);
 
 		if (zombiesToSpawn <= 0 && aliveZombies.isEmpty()) {
 			endRound();
@@ -352,7 +353,8 @@ public class GameManager {
 		double health = RoundScaling.health(round);
 		ZombieHealth.init(zombie, health);
 		setAttribute(zombie, Attributes.MAX_HEALTH, ZombieHealth.MINECRAFT_HEALTH);
-		setAttribute(zombie, Attributes.MOVEMENT_SPEED, RoundScaling.speed(round));
+		boolean runner = ZombieAttacks.init(zombie, round);
+		setAttribute(zombie, Attributes.MOVEMENT_SPEED, ZombieAttacks.speed(runner));
 		setAttribute(zombie, Attributes.ATTACK_DAMAGE, RoundScaling.damage(round));
 		setAttribute(zombie, Attributes.FOLLOW_RANGE, ZombiesConfig.get().followRange);
 		// Keine Vanilla-Verstärkungen, sonst stimmt die Zombie-Anzahl nicht.
@@ -448,6 +450,7 @@ public class GameManager {
 		}
 		aliveZombies.clear();
 		ZombieHealth.clear();
+		ZombieAttacks.clear();
 		zombiesToSpawn = 0;
 		removeLeftoverZombies();
 	}
@@ -484,6 +487,7 @@ public class GameManager {
 		aliveZombies.remove(zombie);
 		if (zombie instanceof LivingEntity living) {
 			ZombieHealth.remove(living);
+			ZombieAttacks.remove(living);
 		}
 	}
 
