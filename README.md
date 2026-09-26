@@ -12,7 +12,8 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   zurückgegeben); jeder bekommt die MR6 voll geladen (Config `startingWeapon`).
   Zombies haben ihr Leben aus Black Ops III (Runde 1: 150, dann +100 pro Runde, ab Runde 10 ×1,1).
 - **Messer auf V:** mit jeder Waffe in der Hand, 150 Schaden wie in BO3, Nahkampf-Kill 130 Punkte.
-  Steht ein Zombie knapp außer Reichweite (bis 4 Blöcke) vor dir, machst du einen Ausfallschritt.
+  Läufst du auf einen Zombie knapp außer Reichweite (bis 4 Blöcke) zu, machst du einen Ausfallschritt;
+  sonst bleibst du stehen.
   Ein gezeichnetes Kampfmesser schwingt dabei durchs Bild. Taste in den Steuerungs-Optionen änderbar.
 - **Zombie-Arten:** Schlenderer und Läufer. Ab Runde 3 gibt es Läufer, ihr Anteil steigt pro Runde.
   Zombies schlagen nicht bei Berührung zu, sondern holen aus und treffen erst nach der Ausholzeit
@@ -70,7 +71,10 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   10 Zombies, die Thundergun eine Druckwelle, die alle Zombies vor dir tötet und wegschleudert.
   Noch nicht dabei: Apothicon Servant, Wrath of the Ancients, KT-4, GKZ-45 Mk3 (Quest-Waffen anderer Maps).
   Texturen, Modelle und Namen erzeugt `tools/gen_gun_textures.py`.
-- **Schießen:** Rechtsklick. Automatikwaffen feuern, solange die Taste gehalten wird.
+- **Schießen:** Linksklick (mit Waffe in der Hand wird nicht geschlagen oder abgebaut).
+  Automatikwaffen feuern, solange die Taste gehalten wird.
+- **Zielen:** Rechtsklick halten: Zoom, Kimme und Korn (Scharfschützengewehre: Zielfernrohr mit
+  starkem Zoom), nur noch 20 % der Streuung (Schrotflinten 70 %), dafür 35 % langsamer.
   Treffer sind sofort (Hitscan) und enden an Blöcken; Mitspieler werden nie getroffen.
 - **Munition:** Magazin + Reserve. **R** lädt nach (Taste in den Steuerungs-Optionen änderbar);
   ein leeres Magazin wird automatisch nachgeladen. Wechselt man die Waffe, bricht das Nachladen ab.
@@ -269,6 +273,6 @@ src/main/java/de/knospenraucher/mczombies/     (Server + gemeinsamer Code)
 src/client/java/de/knospenraucher/mczombies/client/   (nur Client)
 ├── MCZombiesClient.java    Client-Einstiegspunkt
 ├── ClientGameState.java    Empfangener Spielzustand
-├── GunInput.java           Rechtsklick/R an den Server schicken
+├── GunInput.java           Linksklick/Rechtsklick/R/V an den Server schicken
 └── ZombiesHud.java         HUD-Anzeige (inkl. Munition)
 ```
