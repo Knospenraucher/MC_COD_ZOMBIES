@@ -18,9 +18,9 @@ import java.util.UUID;
 /**
  * Messer-Nahkampf auf Taste V, mit jeder Waffe in der Hand (wie in CoD).
  * <p>
- * Trifft den Zombie im Visier (bis {@link #REACH} Blöcke) oder, wie der Ausfallschritt in CoD,
- * den nächsten Zombie in einem Kegel bis {@link #LUNGE_REACH} Blöcke; den Schritt nach vorne macht
- * der Client. Schaden: Minecraft-Schaden 1 × {@code meleeDamageScale} = 150 wie das BO3-Messer.
+ * Trifft den Zombie im Visier (bis {@link #REACH} Blöcke). Läuft der Spieler auf einen Zombie zu,
+ * macht der Client einen Ausfallschritt wie in CoD; dann trifft das Messer den nächsten Zombie
+ * in einem Kegel bis {@link #LUNGE_REACH} Blöcke. Schaden: Minecraft-Schaden 1 × {@code meleeDamageScale} = 150 wie das BO3-Messer.
  * Kills zählen als Nahkampf-Kills (130 Punkte).
  */
 public final class KnifeMelee {
@@ -36,7 +36,8 @@ public final class KnifeMelee {
 	private KnifeMelee() {
 	}
 
-	public static void stab(ServerPlayer player) {
+	/** @param lunge der Client hat einen Ausfallschritt gemacht (dann reicht das Messer weiter) */
+	public static void stab(ServerPlayer player, boolean lunge) {
 		if (!player.isAlive() || player.isSpectator()) {
 			return;
 		}
@@ -52,7 +53,7 @@ public final class KnifeMelee {
 		level.playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 1.4F);
 
-		LivingEntity target = findTarget(level, player, eye, look);
+		LivingEntity target = findTarget(level, player, eye, look, lunge);
 		if (target == null) {
 			return;
 		}
@@ -64,11 +65,14 @@ public final class KnifeMelee {
 		target.hurtServer(level, player.damageSources().playerAttack(player), 1.0F);
 	}
 
-	private static LivingEntity findTarget(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 look) {
+	private static LivingEntity findTarget(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 look, boolean lunge) {
 		Vec3 end = GunManager.blockLimitedEnd(level, player, eye, look, REACH);
 		List<GunManager.BulletHit> direct = GunManager.traceEntities(level, player, eye, end);
 		if (!direct.isEmpty()) {
 			return direct.get(0).target();
+		}
+		if (!lunge) {
+			return null;
 		}
 		AABB area = player.getBoundingBox().inflate(LUNGE_REACH);
 		return level.getEntitiesOfClass(LivingEntity.class, area, e -> GunManager.isTarget(e, player))

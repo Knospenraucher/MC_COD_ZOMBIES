@@ -52,8 +52,8 @@ public final class GunInput {
 		while (meleeKey.consumeClick()) {
 			if (mc.player.tickCount >= nextKnifeTick) {
 				nextKnifeTick = mc.player.tickCount + KnifeMelee.COOLDOWN_TICKS;
-				ClientPlayNetworking.send(new GunActionPayload(GunActionPayload.MELEE));
-				KnifeAnimation.start();
+				boolean lunged = KnifeAnimation.start();
+				ClientPlayNetworking.send(new GunActionPayload(lunged ? GunActionPayload.MELEE_LUNGE : GunActionPayload.MELEE));
 			}
 		}
 

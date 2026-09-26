@@ -16,6 +16,8 @@ public record GunActionPayload(int action) implements CustomPacketPayload {
 	public static final int SHOOT = 0;
 	public static final int RELOAD = 1;
 	public static final int MELEE = 2;
+	/** Messer mit Ausfallschritt (der Spieler lief auf einen Zombie zu). */
+	public static final int MELEE_LUNGE = 3;
 
 	public static final CustomPacketPayload.Type<GunActionPayload> TYPE =
 			new CustomPacketPayload.Type<>(MCZombies.id("gun_action"));

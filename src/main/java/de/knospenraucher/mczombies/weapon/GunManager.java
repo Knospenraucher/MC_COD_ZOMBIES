@@ -79,7 +79,8 @@ public final class GunManager {
 			context.server().execute(() -> {
 				switch (payload.action()) {
 					case GunActionPayload.RELOAD -> startReload(player, true);
-					case GunActionPayload.MELEE -> KnifeMelee.stab(player);
+					case GunActionPayload.MELEE -> KnifeMelee.stab(player, false);
+					case GunActionPayload.MELEE_LUNGE -> KnifeMelee.stab(player, true);
 					default -> shoot(player);
 				}
 			});

@@ -12,8 +12,8 @@ import java.util.Comparator;
 
 /**
  * Kleine Messer-Animation: ein Kampfmesser schwingt von rechts unten durchs Bild.
- * Gezeichnet aus Rechtecken, damit keine Textur nötig ist. Dazu der Ausfallschritt:
- * steht ein Zombie knapp außer Reichweite vor dir, macht der Spieler einen Satz nach vorne.
+ * Gezeichnet aus Rechtecken, damit keine Textur nötig ist. Dazu der Ausfallschritt: läuft der
+ * Spieler auf einen Zombie knapp außer Reichweite zu, macht er einen Satz nach vorne.
  */
 public final class KnifeAnimation {
 	/** Dauer der Animation in Millisekunden. */
@@ -30,16 +30,19 @@ public final class KnifeAnimation {
 		return startMs >= 0 && System.currentTimeMillis() - startMs < DURATION_MS;
 	}
 
-	public static void start() {
+	/**
+	 * Startet die Animation. Den Ausfallschritt gibt es nur, wenn der Spieler gerade nach vorne läuft.
+	 *
+	 * @return true, wenn der Spieler einen Satz nach vorne gemacht hat
+	 */
+	public static boolean start() {
 		startMs = System.currentTimeMillis();
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null) {
-			lunge(mc.player);
-		}
+		return mc.player != null && mc.options.keyUp.isDown() && lunge(mc.player);
 	}
 
 	/** Satz nach vorne zum nächsten Zombie im Blickfeld (wie der Ausfallschritt in CoD). */
-	private static void lunge(Player player) {
+	private static boolean lunge(Player player) {
 		Vec3 eye = player.getEyePosition();
 		Vec3 look = player.getLookAngle();
 		AABB area = player.getBoundingBox().inflate(LUNGE_MAX);
@@ -51,11 +54,13 @@ public final class KnifeAnimation {
 					return distance >= LUNGE_MIN && distance <= LUNGE_MAX && offset.normalize().dot(look) >= 0.82;
 				})
 				.min(Comparator.comparingDouble(e -> e.distanceToSqr(player)))
-				.ifPresent(target -> {
+				.map(target -> {
 					Vec3 dir = target.position().subtract(player.position());
 					Vec3 flat = new Vec3(dir.x, 0, dir.z).normalize().scale(0.7);
 					player.setDeltaMovement(flat.x, Math.max(player.getDeltaMovement().y, 0.1), flat.z);
-				});
+					return true;
+				})
+				.orElse(false);
 	}
 
 	public static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
