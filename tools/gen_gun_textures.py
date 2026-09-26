@@ -308,7 +308,8 @@ def draw(gun_id, category):
                 elif not below:
                     c = shade(c, 0.8)
                 img.putpixel((x, y), c + (255,))
-    return img
+    # Mündung nach links: so zeigt die Waffe in der Hand (Modell "handheld") vom Spieler weg.
+    return img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
 
 
 def parse_catalog():

@@ -1,5 +1,6 @@
 {
   "key.mczombies.reload": "Waffe nachladen",
+  "key.mczombies.melee": "Messer (Nahkampf)",
   "item.mczombies.mr6": "MR6",
   "item.mczombies.mr6.upgraded": "Death & Taxes",
   "item.mczombies.rk5": "RK5",
@@ -79,6 +80,5 @@
   "item.mczombies.thundergun": "Thundergun",
   "item.mczombies.thundergun.upgraded": "Zeus Cannon",
   "item.mczombies.annihilator": "Annihilator",
-  "item.mczombies.annihilator.upgraded": "Annihilator (Pack-a-Punch)",
-  "key.mczombies.melee": "Messer (Nahkampf)"
+  "item.mczombies.annihilator.upgraded": "Annihilator (Pack-a-Punch)"
 }
