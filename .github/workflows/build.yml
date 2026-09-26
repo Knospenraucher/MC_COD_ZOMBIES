@@ -17,15 +17,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build
         run: ./gradlew build
-      - name: Signaturen pruefen (temporaer)
-        continue-on-error: true
-        run: |
-          find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft | head
-          J=$(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i 'minecraft-\(client\|merged\|common\)' | head -1); echo "JAR $J"
-          for J in $(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft); do unzip -l "$J" | grep -E 'InHand|FirstPerson|AbstractClientPlayer\.class|client/DeltaTracker\.class' | head -20; done
-          CP=$(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft | tr '\n' ':')
-          for C in net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState; do echo "== $C"; javap -p -cp "$CP" "$C" 2>&1 | grep "(" | head -60; done
-          javap -cp "$CP" net.minecraft.client.Minecraft 2>&1 | grep -i delta
       - name: Mod-Jar hochladen
         uses: actions/upload-artifact@v4
         with:
