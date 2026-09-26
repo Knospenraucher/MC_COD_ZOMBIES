@@ -46,7 +46,7 @@ public final class KnifeAnimation {
 		Vec3 eye = player.getEyePosition();
 		Vec3 look = player.getLookAngle();
 		AABB area = player.getBoundingBox().inflate(LUNGE_MAX);
-		player.level().getEntitiesOfClass(LivingEntity.class, area, e -> e != player && e.isAlive() && !(e instanceof Player))
+		return player.level().getEntitiesOfClass(LivingEntity.class, area, e -> e != player && e.isAlive() && !(e instanceof Player))
 				.stream()
 				.filter(e -> {
 					Vec3 offset = e.getBoundingBox().getCenter().subtract(eye);

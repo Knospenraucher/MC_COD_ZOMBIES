@@ -13,7 +13,10 @@
 		"main": ["de.knospenraucher.mczombies.MCZombies"],
 		"client": ["de.knospenraucher.mczombies.client.MCZombiesClient"]
 	},
-	"mixins": ["mczombies.mixins.json"],
+	"mixins": [
+		"mczombies.mixins.json",
+		{"config": "mczombies.client.mixins.json", "environment": "client"}
+	],
 	"depends": {
 		"fabricloader": ">=0.19.0",
 		"minecraft": "~26.3",

@@ -81,6 +81,8 @@ public final class GunManager {
 					case GunActionPayload.RELOAD -> startReload(player, true);
 					case GunActionPayload.MELEE -> KnifeMelee.stab(player, false);
 					case GunActionPayload.MELEE_LUNGE -> KnifeMelee.stab(player, true);
+					case GunActionPayload.AIM_START -> Aiming.set(player, true);
+					case GunActionPayload.AIM_STOP -> Aiming.set(player, false);
 					default -> shoot(player);
 				}
 			});
@@ -177,7 +179,7 @@ public final class GunManager {
 		Map<LivingEntity, Boolean> headshotByTarget = new HashMap<>();
 		int pellets = Math.max(1, stats.pellets);
 		for (int i = 0; i < pellets; i++) {
-			Vec3 dir = spread(player.getLookAngle(), stats.spread, player.getRandom());
+			Vec3 dir = spread(player.getLookAngle(), stats.spread * Aiming.spreadFactor(player, pellets), player.getRandom());
 			Vec3 end = blockLimitedEnd(level, player, eye, dir, stats.range);
 			List<BulletHit> hits = traceEntities(level, player, eye, end);
 			int penetration = Math.max(1, stats.penetration);
@@ -210,7 +212,7 @@ public final class GunManager {
 	private static void fireRocket(ServerLevel level, ServerPlayer player, GunStats stats, float damage, double radius,
 			boolean ray, boolean upgraded) {
 		Vec3 eye = player.getEyePosition();
-		Vec3 dir = spread(player.getLookAngle(), stats.spread, player.getRandom());
+		Vec3 dir = spread(player.getLookAngle(), stats.spread * Aiming.spreadFactor(player, 1), player.getRandom());
 		Vec3 end = blockLimitedEnd(level, player, eye, dir, stats.range);
 		List<BulletHit> hits = traceEntities(level, player, eye, end);
 		Vec3 impact = hits.isEmpty() ? end : hits.get(0).point();

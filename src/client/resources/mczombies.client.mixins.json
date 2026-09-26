@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "de.knospenraucher.mczombies.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"AbstractClientPlayerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
