@@ -12,6 +12,7 @@ import de.knospenraucher.mczombies.map.BlockSnapshots;
 import de.knospenraucher.mczombies.map.MapData;
 import de.knospenraucher.mczombies.map.MapData.BlockSnapshot;
 import de.knospenraucher.mczombies.map.MapTemplates;
+import de.knospenraucher.mczombies.map.prefab.NachtMap;
 import de.knospenraucher.mczombies.map.prefab.RieseMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -32,6 +33,7 @@ import net.minecraft.world.phys.HitResult;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /**
  * Der Befehl {@code /zombies} (Operator-Rechte, Level 2).
@@ -46,7 +48,7 @@ import java.util.List;
  * /zombies wallweapon add &lt;item&gt; &lt;preis&gt; [munitionspreis] | remove &lt;nr&gt; | list
  * /zombies box add [pos] | remove &lt;nr&gt; | list
  * /zombies upgrade add [pos] | remove &lt;nr&gt; | list
- * /zombies buildmap riese [original]
+ * /zombies buildmap riese|nacht [original]
  * /zombies edit start | save | cancel | reset
  * </pre>
  */
@@ -132,7 +134,9 @@ public final class ZombiesCommand {
 						.then(Commands.literal("list").executes(ZombiesCommand::listUpgrades)))
 				.then(Commands.literal("buildmap")
 						.then(Commands.literal("riese").executes(ctx -> buildRiese(ctx, false))
-								.then(Commands.literal("original").executes(ctx -> buildRiese(ctx, true)))))
+								.then(Commands.literal("original").executes(ctx -> buildRiese(ctx, true))))
+						.then(Commands.literal("nacht").executes(ctx -> buildNacht(ctx, false))
+								.then(Commands.literal("original").executes(ctx -> buildNacht(ctx, true)))))
 				.then(Commands.literal("edit")
 						.then(Commands.literal("start").executes(ZombiesCommand::editStart))
 						.then(Commands.literal("save").executes(ZombiesCommand::editSave))
@@ -540,29 +544,44 @@ public final class ZombiesCommand {
 	// ---------------------------------------------------------------- Vorgefertigte Maps
 
 	private static int buildRiese(CommandContext<CommandSourceStack> ctx, boolean original) throws CommandSyntaxException {
+		return buildPrefab(ctx, original, RieseMap.NAME, "Der Riese", RieseMap::origin, RieseMap::build);
+	}
+
+	private static int buildNacht(CommandContext<CommandSourceStack> ctx, boolean original) throws CommandSyntaxException {
+		return buildPrefab(ctx, original, NachtMap.NAME, "Nacht der Untoten", NachtMap::origin, NachtMap::build);
+	}
+
+	/** Baut eine eingebaute Map oder, falls vorhanden, die im Bearbeitungsmodus gespeicherte Version. */
+	private static int buildPrefab(CommandContext<CommandSourceStack> ctx, boolean original, String name, String title,
+			UnaryOperator<BlockPos> origin, PrefabBuilder builder) throws CommandSyntaxException {
 		MapData map = editableMap(ctx);
 		if (map == null) {
 			return 0;
 		}
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
 		ServerLevel level = ctx.getSource().getLevel();
-		boolean own = !original && MapTemplates.exists(RieseMap.NAME);
+		boolean own = !original && MapTemplates.exists(name);
 		if (own) {
 			try {
-				MapTemplates.paste(level, map, RieseMap.NAME, RieseMap.origin(player.blockPosition()));
+				MapTemplates.paste(level, map, name, origin.apply(player.blockPosition()));
 			} catch (IOException | RuntimeException e) {
 				MCZombies.LOGGER.error("Konnte gespeicherte Vorlage nicht laden", e);
 				ctx.getSource().sendFailure(Component.literal("Deine gespeicherte Vorlage konnte nicht geladen werden (" + e.getMessage()
-						+ "). Mit /zombies buildmap riese original baust du die eingebaute Version."));
+						+ "). Mit /zombies buildmap " + name + " original baust du die eingebaute Version."));
 				return 0;
 			}
 		} else {
-			RieseMap.build(level, map, player.blockPosition());
+			builder.build(level, map, player.blockPosition());
 		}
 		String which = own ? "deine gespeicherte Version" : "die eingebaute Version";
-		ctx.getSource().sendSuccess(() -> Component.literal("Map „Der Riese“ gebaut (" + which + "). Die alten Map-Einstellungen liegen in "
+		ctx.getSource().sendSuccess(() -> Component.literal("Map „" + title + "“ gebaut (" + which + "). Die alten Map-Einstellungen liegen in "
 				+ "mczombies_map.json.bak. Start mit /zombies start, umbauen mit /zombies edit start.").withStyle(ChatFormatting.GREEN), true);
 		return 1;
+	}
+
+	@FunctionalInterface
+	private interface PrefabBuilder {
+		void build(ServerLevel level, MapData map, BlockPos feet);
 	}
 
 	// ---------------------------------------------------------------- Bearbeitungsmodus
@@ -574,7 +593,7 @@ public final class ZombiesCommand {
 		}
 		MapData.TemplateInfo template = map.getTemplate();
 		if (template == null) {
-			ctx.getSource().sendFailure(Component.literal("Diese Map stammt aus keiner Vorlage. Erst /zombies buildmap riese."));
+			ctx.getSource().sendFailure(Component.literal("Diese Map stammt aus keiner Vorlage. Erst /zombies buildmap riese oder /zombies buildmap nacht."));
 			return 0;
 		}
 		if (map.isEditing()) {
@@ -643,13 +662,15 @@ public final class ZombiesCommand {
 		}
 		map.setEditing(false);
 		ctx.getSource().sendSuccess(() -> Component.literal("Bearbeitungsmodus beendet, nichts gespeichert. Die Änderungen stehen noch in "
-				+ "dieser Welt; /zombies buildmap riese baut die gespeicherte Version neu auf."), true);
+				+ "dieser Welt; /zombies buildmap baut die gespeicherte Version neu auf."), true);
 		return 1;
 	}
 
 	private static int editReset(CommandContext<CommandSourceStack> ctx) {
+		MapData current = map(ctx);
+		String name = current != null && current.getTemplate() != null ? current.getTemplate().name : RieseMap.NAME;
 		try {
-			if (!MapTemplates.delete(RieseMap.NAME)) {
+			if (!MapTemplates.delete(name)) {
 				ctx.getSource().sendFailure(Component.literal("Es gibt keine gespeicherte Version, es gilt schon die eingebaute."));
 				return 0;
 			}
@@ -657,7 +678,7 @@ public final class ZombiesCommand {
 			ctx.getSource().sendFailure(Component.literal("Löschen fehlgeschlagen: " + e.getMessage()));
 			return 0;
 		}
-		ctx.getSource().sendSuccess(() -> Component.literal("Deine gespeicherte Version ist gelöscht. /zombies buildmap riese baut wieder die eingebaute."), true);
+		ctx.getSource().sendSuccess(() -> Component.literal("Deine gespeicherte Version ist gelöscht. /zombies buildmap " + name + " baut wieder die eingebaute."), true);
 		return 1;
 	}
 
