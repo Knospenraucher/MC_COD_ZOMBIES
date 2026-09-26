@@ -65,7 +65,7 @@ public final class GunInput {
 	}
 
 	private static void swallowAttackClicks(Minecraft mc) {
-		if (mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof GunItem) || mc.screen != null) {
+		if (mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof GunItem)) {
 			return;
 		}
 		while (mc.options.keyAttack.consumeClick()) {
@@ -99,7 +99,7 @@ public final class GunInput {
 		}
 
 		// Linksklick: schießen. Automatikwaffen feuern, solange die Taste gehalten wird.
-		boolean attackDown = mc.options.keyAttack.isDown() && mc.screen == null;
+		boolean attackDown = mc.options.keyAttack.isDown();
 		if (holdingGun) {
 			GunItem gun = (GunItem) stack.getItem();
 			if ((attackDown && gun.stats().automatic) || pendingShots > 0 || (attackDown && !attackWasDown)) {
@@ -110,6 +110,6 @@ public final class GunInput {
 		attackWasDown = attackDown;
 
 		// Rechtsklick halten: über Kimme und Korn zielen.
-		setAiming(holdingGun && mc.options.keyUse.isDown() && mc.screen == null);
+		setAiming(holdingGun && mc.options.keyUse.isDown());
 	}
 }
