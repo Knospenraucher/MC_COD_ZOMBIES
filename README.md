@@ -73,7 +73,7 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   Texturen, Modelle und Namen erzeugt `tools/gen_gun_textures.py`.
 - **Schießen:** Linksklick (mit Waffe in der Hand wird nicht geschlagen oder abgebaut).
   Automatikwaffen feuern, solange die Taste gehalten wird.
-- **Zielen:** Rechtsklick halten: Zoom, Kimme und Korn (Scharfschützengewehre: Zielfernrohr mit
+- **Zielen:** Rechtsklick halten (die Waffe gleitet in etwa 0,2 s ins Visier, Hand und Waffe der Ich-Ansicht werden dabei ausgeblendet; die MR6 hat eine eigene BO3-Visieransicht): Zoom, Kimme und Korn (Scharfschützengewehre: Zielfernrohr mit
   starkem Zoom), nur noch 20 % der Streuung (Schrotflinten 70 %), dafür 35 % langsamer.
   Treffer sind sofort (Hitscan) und enden an Blöcken; Mitspieler werden nie getroffen.
 - **Munition:** Magazin + Reserve. **R** lädt nach (Taste in den Steuerungs-Optionen änderbar);
@@ -237,6 +237,7 @@ Die wichtigsten Werte:
 | `zombiesExtraPlayerFactor` | 0.5 | +50 % Zombies pro weiterem Spieler |
 | `maxAliveZombies` | 24 | Maximal gleichzeitig lebende Zombies |
 | `healthEarlyRounds` / `healthPerRound` | [150] / 100 | Zombie-Leben in BO3-Einheiten: Runde 1 / danach zusätzlich pro Runde |
+| `knifeDamage` | 150 | Schaden eines Messerstichs (V); 150 = Runde-1-Zombies sterben mit einem Stich |
 | `meleeDamageScale` | 150 | Faust, Schwert, Bogen: Minecraft-Schaden × Faktor (Faust = 150 wie das Messer) |
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
 | `walkerSpeed` / `runnerSpeed` | 0.17 / 0.30 | Tempo der Schlenderer / Läufer |
