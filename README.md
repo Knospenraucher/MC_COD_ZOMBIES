@@ -77,6 +77,20 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   Schaden, Magazin und Reserve wie nach Pack-a-Punch im Original, volle Munition, Glitzer und der
   Pack-a-Punch-Name (z. B. KN-44 → „Anointed Avenger“).
 
+## Testmap: Nacht der Untoten
+
+`/zombies buildmap nacht` baut ein kleines Farmhaus nach der Beschreibung von „Nacht der Untoten“
+im Fandom-Wiki (etwa 35 × 19 Blöcke, zwei Stockwerke). WaW-Waffen sind durch BO3-Waffen ersetzt.
+
+| Bereich | Inhalt |
+|---|---|
+| Startraum | 5 Fenster, Sheiva 200 (statt Kar98k), M8A7 600 (statt M1A1 Carbine) |
+| Help-Raum (Tür rechts vom Start, 1000) | 2 Fenster und die Höhle, Zufallskiste mit festem Platz, 205 Brecci 1200, M1927 1200 |
+| Obergeschoss (Sofa-Treppe im Startraum oder Schutt-Treppe im Help-Raum, je 1000) | 4 Fenster, Marshal 16 1200, KRM-262 1500, Man-O-War 1800, Scharfschützenschrank mit Drakon 1500 und Locus 5000, Pack-a-Punch |
+
+Handgranaten und Mule Kick fehlen noch (kommen mit Phase 4). Der Bearbeitungsmodus funktioniert
+wie bei „Der Riese“, die Vorlage heißt `nacht`.
+
 ## Map: Der Riese (Nachbau von „The Giant“, im Aufbau)
 
 Die Map entsteht Bereich für Bereich nach Screenshots aus dem Spiel. Bisher steht der **Spawn**:
@@ -186,6 +200,7 @@ Alle Befehle brauchen Operator-Rechte (in Einzelspieler: Cheats an).
 | `/zombies upgrade remove <nr>` / `upgrade list` | Aufrüst-Maschine entfernen / anzeigen |
 | `/zombies buildmap riese` | Baut den Nachbau von „The Giant“ um dich herum (deine gespeicherte Version, falls vorhanden; ersetzt die Map-Einstellungen, alte Datei wird als `.bak` gesichert) |
 | `/zombies buildmap riese original` | Baut immer die eingebaute Version |
+| `/zombies buildmap nacht [original]` | Baut die Testmap „Nacht der Untoten“ um dich herum |
 | `/zombies edit start` / `edit save` | Bearbeitungsmodus an / Umbau als eigene Vorlage speichern |
 | `/zombies edit cancel` / `edit reset` | Ohne Speichern beenden / eigene Vorlage löschen |
 
