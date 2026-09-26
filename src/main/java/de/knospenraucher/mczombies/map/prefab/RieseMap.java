@@ -47,9 +47,17 @@ public final class RieseMap {
 		this.oz = feet.getZ() - START_Z;
 	}
 
+	/** Name der Vorlage, unter der Umbauten aus dem Bearbeitungsmodus gespeichert werden. */
+	public static final String NAME = "riese";
+
 	/** Baut die Map um die Füße des Spielers und trägt alle Map-Elemente ein. */
 	public static void build(ServerLevel level, MapData map, BlockPos feet) {
 		new RieseMap(level, map, feet).build();
+	}
+
+	/** Nullpunkt der Map, wenn der Spieler bei {@code feet} steht (gilt auch für gespeicherte Vorlagen). */
+	public static BlockPos origin(BlockPos feet) {
+		return new BlockPos(feet.getX(), feet.getY() - 1, feet.getZ() - START_Z);
 	}
 
 	private void build() {
@@ -75,6 +83,7 @@ public final class RieseMap {
 		snow(-5, 14, 5, 18, 21, Blocks.BRICKS);
 
 		map.setPlayerSpawn(pos(0, 1, START_Z));
+		map.setTemplate(NAME, pos(0, 0, 0), pos(-30, 0, -34), pos(30, 32, 22));
 	}
 
 	// ================================================================ Norden: Fabrikwand

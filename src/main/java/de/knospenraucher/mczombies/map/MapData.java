@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Map-Konfiguration einer Welt: Spawnpunkte, Spieler-Startpunkt, Türen, Fenster,
@@ -115,6 +116,14 @@ public class MapData {
 		public int ammoPrice;
 	}
 
+	/** Bereich einer gebauten Vorlage: Name, Bezugspunkt und die zwei Ecken (Weltkoordinaten). */
+	public static class TemplateInfo {
+		public String name;
+		public Pos origin;
+		public Pos min;
+		public Pos max;
+	}
+
 	/** Gespeicherter Inhalt der Datei. */
 	private static class Data {
 		List<SpawnPoint> zombieSpawns = new ArrayList<>();
@@ -124,6 +133,29 @@ public class MapData {
 		List<WallWeapon> wallWeapons = new ArrayList<>();
 		List<Pos> boxLocations = new ArrayList<>();
 		List<Pos> upgradeMachines = new ArrayList<>();
+		/** Aus welcher Vorlage die Map gebaut wurde (null = von Hand aufgebaut). */
+		TemplateInfo template = null;
+		/** true, solange der Bearbeitungsmodus an ist. */
+		boolean editing = false;
+
+		/** Ruft {@code action} für jede gespeicherte Position auf (zum Verschieben). */
+		void forEachPos(Consumer<Pos> action) {
+			zombieSpawns.forEach(action);
+			if (playerSpawn != null) action.accept(playerSpawn);
+			for (Door door : doors) {
+				action.accept(door.min);
+				action.accept(door.max);
+				door.blocks.forEach(b -> action.accept(b.pos));
+			}
+			for (Window window : windows) {
+				action.accept(window.min);
+				action.accept(window.max);
+				window.boards.forEach(b -> action.accept(b.pos));
+			}
+			wallWeapons.forEach(w -> action.accept(w.pos));
+			boxLocations.forEach(action);
+			upgradeMachines.forEach(action);
+		}
 
 		/** Ältere Dateien kennen manche Listen noch nicht. */
 		void fillMissing() {
@@ -180,6 +212,61 @@ public class MapData {
 			MCZombies.LOGGER.warn("Konnte keine Sicherung von {} anlegen", file, e);
 		}
 		data = new Data();
+		save();
+	}
+
+	// ================================================================ Vorlagen und Bearbeitungsmodus
+
+	public TemplateInfo getTemplate() {
+		return data.template;
+	}
+
+	/** Merkt sich, aus welcher Vorlage und in welchem Bereich die Map gebaut wurde. */
+	public void setTemplate(String name, BlockPos origin, BlockPos min, BlockPos max) {
+		TemplateInfo info = new TemplateInfo();
+		info.name = name;
+		info.origin = new Pos(origin);
+		info.min = new Pos(min);
+		info.max = new Pos(max);
+		data.template = info;
+		save();
+	}
+
+	public boolean isEditing() {
+		return data.editing;
+	}
+
+	public void setEditing(boolean editing) {
+		data.editing = editing;
+		save();
+	}
+
+	/** Alle Map-Elemente als JSON, mit Positionen relativ zu {@code origin} (ohne Vorlagen-Infos). */
+	public JsonElement exportRelative(BlockPos origin) {
+		Data copy = GSON.fromJson(GSON.toJsonTree(data), Data.class);
+		copy.fillMissing();
+		copy.template = null;
+		copy.editing = false;
+		copy.forEachPos(p -> {
+			p.x -= origin.getX();
+			p.y -= origin.getY();
+			p.z -= origin.getZ();
+		});
+		return GSON.toJsonTree(copy);
+	}
+
+	/** Ersetzt alle Map-Elemente durch die aus {@link #exportRelative}, verschoben auf {@code origin}. */
+	public void importRelative(JsonElement json, BlockPos origin) {
+		Data loaded = GSON.fromJson(json, Data.class);
+		loaded.fillMissing();
+		loaded.forEachPos(p -> {
+			p.x += origin.getX();
+			p.y += origin.getY();
+			p.z += origin.getZ();
+		});
+		loaded.template = null;
+		loaded.editing = false;
+		data = loaded;
 		save();
 	}
 

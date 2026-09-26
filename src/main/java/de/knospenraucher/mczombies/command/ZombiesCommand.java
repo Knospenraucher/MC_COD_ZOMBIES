@@ -5,10 +5,13 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import de.knospenraucher.mczombies.MCZombies;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.game.GameManager;
 import de.knospenraucher.mczombies.map.BlockSnapshots;
 import de.knospenraucher.mczombies.map.MapData;
+import de.knospenraucher.mczombies.map.MapData.BlockSnapshot;
+import de.knospenraucher.mczombies.map.MapTemplates;
 import de.knospenraucher.mczombies.map.prefab.RieseMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
@@ -20,11 +23,14 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -40,7 +46,8 @@ import java.util.List;
  * /zombies wallweapon add &lt;item&gt; &lt;preis&gt; [munitionspreis] | remove &lt;nr&gt; | list
  * /zombies box add [pos] | remove &lt;nr&gt; | list
  * /zombies upgrade add [pos] | remove &lt;nr&gt; | list
- * /zombies buildmap riese
+ * /zombies buildmap riese [original]
+ * /zombies edit start | save | cancel | reset
  * </pre>
  */
 public final class ZombiesCommand {
@@ -124,7 +131,13 @@ public final class ZombiesCommand {
 								.then(Commands.argument("nr", IntegerArgumentType.integer(1)).executes(ZombiesCommand::removeUpgrade)))
 						.then(Commands.literal("list").executes(ZombiesCommand::listUpgrades)))
 				.then(Commands.literal("buildmap")
-						.then(Commands.literal("riese").executes(ZombiesCommand::buildRiese))));
+						.then(Commands.literal("riese").executes(ctx -> buildRiese(ctx, false))
+								.then(Commands.literal("original").executes(ctx -> buildRiese(ctx, true)))))
+				.then(Commands.literal("edit")
+						.then(Commands.literal("start").executes(ZombiesCommand::editStart))
+						.then(Commands.literal("save").executes(ZombiesCommand::editSave))
+						.then(Commands.literal("cancel").executes(ZombiesCommand::editCancel))
+						.then(Commands.literal("reset").executes(ZombiesCommand::editReset))));
 	}
 
 	// ---------------------------------------------------------------- Spielsteuerung
@@ -132,6 +145,10 @@ public final class ZombiesCommand {
 	private static int start(CommandContext<CommandSourceStack> ctx) {
 		GameManager game = game(ctx);
 		if (game == null) {
+			return 0;
+		}
+		if (game.getMap().isEditing()) {
+			ctx.getSource().sendFailure(Component.literal("Die Map ist im Bearbeitungsmodus. Erst /zombies edit save oder /zombies edit cancel."));
 			return 0;
 		}
 		String error = game.start(ctx.getSource().getLevel());
@@ -522,15 +539,125 @@ public final class ZombiesCommand {
 
 	// ---------------------------------------------------------------- Vorgefertigte Maps
 
-	private static int buildRiese(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+	private static int buildRiese(CommandContext<CommandSourceStack> ctx, boolean original) throws CommandSyntaxException {
 		MapData map = editableMap(ctx);
 		if (map == null) {
 			return 0;
 		}
 		ServerPlayer player = ctx.getSource().getPlayerOrException();
-		RieseMap.build(ctx.getSource().getLevel(), map, player.blockPosition());
-		ctx.getSource().sendSuccess(() -> Component.literal("Map „Der Riese“ (Nachbau von The Giant) gebaut. Die alten Map-Einstellungen liegen in "
-				+ "mczombies_map.json.bak. Start mit /zombies start.").withStyle(ChatFormatting.GREEN), true);
+		ServerLevel level = ctx.getSource().getLevel();
+		boolean own = !original && MapTemplates.exists(RieseMap.NAME);
+		if (own) {
+			try {
+				MapTemplates.paste(level, map, RieseMap.NAME, RieseMap.origin(player.blockPosition()));
+			} catch (IOException | RuntimeException e) {
+				MCZombies.LOGGER.error("Konnte gespeicherte Vorlage nicht laden", e);
+				ctx.getSource().sendFailure(Component.literal("Deine gespeicherte Vorlage konnte nicht geladen werden (" + e.getMessage()
+						+ "). Mit /zombies buildmap riese original baust du die eingebaute Version."));
+				return 0;
+			}
+		} else {
+			RieseMap.build(level, map, player.blockPosition());
+		}
+		String which = own ? "deine gespeicherte Version" : "die eingebaute Version";
+		ctx.getSource().sendSuccess(() -> Component.literal("Map „Der Riese“ gebaut (" + which + "). Die alten Map-Einstellungen liegen in "
+				+ "mczombies_map.json.bak. Start mit /zombies start, umbauen mit /zombies edit start.").withStyle(ChatFormatting.GREEN), true);
+		return 1;
+	}
+
+	// ---------------------------------------------------------------- Bearbeitungsmodus
+
+	private static int editStart(CommandContext<CommandSourceStack> ctx) {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		MapData.TemplateInfo template = map.getTemplate();
+		if (template == null) {
+			ctx.getSource().sendFailure(Component.literal("Diese Map stammt aus keiner Vorlage. Erst /zombies buildmap riese."));
+			return 0;
+		}
+		if (map.isEditing()) {
+			ctx.getSource().sendFailure(Component.literal("Der Bearbeitungsmodus läuft schon. Fertig mit /zombies edit save."));
+			return 0;
+		}
+		map.setEditing(true);
+		if (ctx.getSource().getPlayer() != null) {
+			ctx.getSource().getPlayer().setGameMode(GameType.CREATIVE);
+		}
+		ctx.getSource().sendSuccess(() -> Component.literal("Bearbeitungsmodus an. Bau um, was du willst, im Bereich "
+				+ format(template.min.toBlockPos()) + " bis " + format(template.max.toBlockPos())
+				+ ". Türen, Fenster und Wandwaffen änderst du mit den üblichen /zombies-Befehlen. "
+				+ "Speichern mit /zombies edit save, verwerfen mit /zombies edit cancel.").withStyle(ChatFormatting.GOLD), true);
+		return 1;
+	}
+
+	private static int editSave(CommandContext<CommandSourceStack> ctx) {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		MapData.TemplateInfo template = map.getTemplate();
+		if (!map.isEditing() || template == null) {
+			ctx.getSource().sendFailure(Component.literal("Der Bearbeitungsmodus ist nicht an. Erst /zombies edit start."));
+			return 0;
+		}
+		ServerLevel level = ctx.getSource().getLevel();
+		// Türen und Fenster so übernehmen, wie sie jetzt in der Welt stehen (falls umgebaut).
+		for (MapData.Door door : map.getDoors()) {
+			List<BlockSnapshot> blocks = BlockSnapshots.capture(level, door);
+			if (!blocks.isEmpty()) {
+				door.blocks = blocks;
+			}
+		}
+		for (MapData.Window window : map.getWindows()) {
+			List<BlockSnapshot> boards = BlockSnapshots.capture(level, window);
+			if (!boards.isEmpty()) {
+				window.boards = boards;
+			}
+		}
+		map.setEditing(false);
+		int saved;
+		try {
+			saved = MapTemplates.save(level, map, template.name);
+		} catch (IOException | RuntimeException e) {
+			MCZombies.LOGGER.error("Konnte Vorlage nicht speichern", e);
+			map.setEditing(true);
+			ctx.getSource().sendFailure(Component.literal("Speichern fehlgeschlagen: " + e.getMessage()));
+			return 0;
+		}
+		ctx.getSource().sendSuccess(() -> Component.literal("Gespeichert (" + saved + " Blöcke). Ab jetzt baut /zombies buildmap "
+				+ template.name + " deine Version, auch in anderen Welten. Die eingebaute bekommst du mit /zombies buildmap "
+				+ template.name + " original.").withStyle(ChatFormatting.GREEN), true);
+		return 1;
+	}
+
+	private static int editCancel(CommandContext<CommandSourceStack> ctx) {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		if (!map.isEditing()) {
+			ctx.getSource().sendFailure(Component.literal("Der Bearbeitungsmodus ist nicht an."));
+			return 0;
+		}
+		map.setEditing(false);
+		ctx.getSource().sendSuccess(() -> Component.literal("Bearbeitungsmodus beendet, nichts gespeichert. Die Änderungen stehen noch in "
+				+ "dieser Welt; /zombies buildmap riese baut die gespeicherte Version neu auf."), true);
+		return 1;
+	}
+
+	private static int editReset(CommandContext<CommandSourceStack> ctx) {
+		try {
+			if (!MapTemplates.delete(RieseMap.NAME)) {
+				ctx.getSource().sendFailure(Component.literal("Es gibt keine gespeicherte Version, es gilt schon die eingebaute."));
+				return 0;
+			}
+		} catch (IOException e) {
+			ctx.getSource().sendFailure(Component.literal("Löschen fehlgeschlagen: " + e.getMessage()));
+			return 0;
+		}
+		ctx.getSource().sendSuccess(() -> Component.literal("Deine gespeicherte Version ist gelöscht. /zombies buildmap riese baut wieder die eingebaute."), true);
 		return 1;
 	}
 
