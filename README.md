@@ -84,6 +84,20 @@ der verschneite Hof vor dem Hauptrechner. `/zombies buildmap riese` baut ihn um 
 
 Die Tore auf der Terrasse und unter dem Uhrturm führen später in die nächsten Bereiche.
 
+### Bearbeitungsmodus
+
+Die gebaute Map lässt sich im Spiel umbauen und als eigene Vorlage speichern:
+
+1. `/zombies buildmap riese`, dann `/zombies edit start` (schaltet in den Kreativmodus).
+2. Blöcke setzen und abbauen; Türen, Fenster, Wandwaffen usw. mit den üblichen Befehlen ändern.
+3. `/zombies edit save` speichert den Bereich samt Map-Elementen nach
+   `config/mczombies/maps/riese.json.gz`. Ab dann baut `/zombies buildmap riese` diese Version,
+   auch in anderen Welten.
+
+`/zombies edit cancel` beendet ohne Speichern, `/zombies buildmap riese original` baut die
+eingebaute Version, `/zombies edit reset` löscht die eigene Vorlage. Gespeichert werden nur
+Blöcke, keine Inhalte von Truhen oder Schildern. Solange der Bearbeitungsmodus an ist, startet kein Spiel.
+
 ## Voraussetzungen
 
 - **JDK 25** (z.B. [Eclipse Temurin 25](https://adoptium.net/)). Prüfen mit `java -version`.
@@ -160,7 +174,10 @@ Alle Befehle brauchen Operator-Rechte (in Einzelspieler: Cheats an).
 | `/zombies box remove <nr>` / `box list` | Kistenstandort entfernen / anzeigen |
 | `/zombies upgrade add [x y z]` | Aufrüst-Maschine (ohne Koordinaten: der Block, auf den du schaust) |
 | `/zombies upgrade remove <nr>` / `upgrade list` | Aufrüst-Maschine entfernen / anzeigen |
-| `/zombies buildmap riese` | Baut den Nachbau von „The Giant“ um dich herum (ersetzt die Map-Einstellungen, alte Datei wird als `.bak` gesichert) |
+| `/zombies buildmap riese` | Baut den Nachbau von „The Giant“ um dich herum (deine gespeicherte Version, falls vorhanden; ersetzt die Map-Einstellungen, alte Datei wird als `.bak` gesichert) |
+| `/zombies buildmap riese original` | Baut immer die eingebaute Version |
+| `/zombies edit start` / `edit save` | Bearbeitungsmodus an / Umbau als eigene Vorlage speichern |
+| `/zombies edit cancel` / `edit reset` | Ohne Speichern beenden / eigene Vorlage löschen |
 
 Die Map kann nur bearbeitet werden, wenn kein Spiel läuft. `/zombies spawn show` zeigt auch Türen
 (Flammen), Fenster (Funken), Wandwaffen (grün), Kistenstandorte (Lichtstrahl) und
