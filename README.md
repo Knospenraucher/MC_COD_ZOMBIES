@@ -67,31 +67,22 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 - **Aufrüst-Maschine:** Rechtsklick mit einer Schusswaffe in der Hand für 5000 Punkte:
   doppelter Schaden, 1,5× Magazin und Reserve, volle Munition, Glitzer und „(Verbessert)“ im Namen.
 
-## Fertige Map: Der Riese (Nachbau von „The Giant“)
+## Map: Der Riese (Nachbau von „The Giant“, im Aufbau)
 
-Nachbau der Black-Ops-III-Map. Der Grundriss folgt dem Bauplan vom Ladebildschirm, das Aussehen
-Screenshots aus dem Spiel (Schnee, Backstein, rot glühende Fenster, Schornsteine, Kran mit dem Kopf
-des Riesen). Die Maße sind geschätzt. `/zombies buildmap riese` baut sie um den Spieler herum
-(am besten in einer flachen Welt, braucht etwa 130 × 120 Blöcke und 30 Blöcke Höhe). Der Spieler
-steht danach im Start vor dem Hauptrechner.
+Die Map entsteht Bereich für Bereich nach Screenshots aus dem Spiel. Bisher steht der **Spawn**:
+der verschneite Hof vor dem Hauptrechner. `/zombies buildmap riese` baut ihn um den Spieler herum
+(etwa 60 × 60 Blöcke, 32 hoch).
 
-| Bereich | Lage | Zugang | Inhalt |
-|---|---|---|---|
-| Start | Osten | – | Hauptrechner-Turm auf Plattform mit Aufrüst-Maschine, Teleporter-Ring, Balkon mit „Waffenfabrik“-Tafel, Sturmgewehr 500, Pistole 500 |
-| Labor | Süden | Tür 750 | MP 1250, Pistole 750, Kiste, Tafel |
-| Tierversuche | Süden, Mitte | offen vom Labor | Käfigzellen, Waschbecken, Fässer |
-| Teleporter A | hinter dem Labor | Tür 1250 | Sturmgewehr 1500, Kiste, zwei glühende Gruben |
-| Werkstatt/Hangar | Norden | Tür 750 | Schrotflinte 750, MP 1300, Kiste, Autos, Obergeschoss |
-| Ofenraum | Norden, Mitte | offen von der Werkstatt | Hochöfen, Säulenreihe |
-| Generatoren | auf dem Ofenraum | über das Obergeschoss der Werkstatt | Motor, Stromkasten, offenes Stahldach |
-| Teleporter B | ganz im Norden | Tür 1250 aus dem Ofenraum | Leichtes MG 1500, Kiste |
-| Innenhof | Mitte | offen von Werkstatt und Tierversuchen | MP 1250, Kiste, Strommast |
-| Brücke | über dem Innenhof | Sperre 1000 an den Generatoren | Elektro-Spitzen (Falle kommt in Phase 4) |
-| Hof links + Teleporter C | Westen | Tür 1250 aus dem Innenhof | Sturmgewehr 1400, Kiste, Schneehaufen |
+- **Hauptrechner:** Turm auf einer erhöhten Plattform mit breiter Treppe, blau leuchtende Kuppel,
+  glühende Kugeln und Leuchtstrahl. Vorne im Turm die Aufrüst-Maschine, davor der Teleporter-Ring.
+- **Westen:** „Waffenfabrik der Riese“ mit Terrasse, Treppe, Stahlbalkon, Tafel und
+  Kaugummiautomat (funktioniert ab Phase 4).
+- **Süden:** Uhrturm mit goldener Uhr und rot beleuchtetem Tor, niedrige Mauer mit Stacheldraht.
+- **Norden/Osten:** Fabrikwand mit glühenden Bögen, Zaun mit Stacheldraht, Schornsteine.
+- **Wandwaffen:** Sturmgewehr 500 am Uhrturm, Pistole 500 an der niedrigen Mauer.
+- **Fenster:** zwei in den Bögen im Norden, zwei im Zaun im Osten.
 
-Abweichungen vom Original: Teleporter, Falle und Stromschalter sind nur Deko (Strom kommt in
-Phase 4, bis dahin ist die Brücke eine kaufbare Sperre), die Aufrüst-Maschine ist sofort nutzbar,
-und die Wandwaffen sind auf die sieben Waffen der Mod abgebildet. Wandwaffen sind Goldblöcke.
+Die Tore auf der Terrasse und unter dem Uhrturm führen später in die nächsten Bereiche.
 
 ## Voraussetzungen
 
