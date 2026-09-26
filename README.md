@@ -14,6 +14,9 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 - **Messer auf V:** mit jeder Waffe in der Hand, 150 Schaden wie in BO3, Nahkampf-Kill 130 Punkte.
   Steht ein Zombie knapp außer Reichweite (bis 4 Blöcke) vor dir, machst du einen Ausfallschritt.
   Ein gezeichnetes Kampfmesser schwingt dabei durchs Bild. Taste in den Steuerungs-Optionen änderbar.
+- **Zombie-Arten:** Schlenderer und Läufer. Ab Runde 3 gibt es Läufer, ihr Anteil steigt pro Runde.
+  Zombies schlagen nicht bei Berührung zu, sondern holen aus und treffen erst nach der Ausholzeit
+  (Läufer schneller); wer vorher wegläuft, wird nicht getroffen.
 - **Rundensystem:** Zombies spawnen an festgelegten Spawnpunkten. Anzahl, Leben, Tempo und Schaden
   steigen pro Runde. Zombies tragen einen Helm und verbrennen deshalb tagsüber nicht. Andere
   Mobs (Tiere, Monster) werden während des Spiels entfernt. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
@@ -232,7 +235,10 @@ Die wichtigsten Werte:
 | `healthEarlyRounds` / `healthPerRound` | [150] / 100 | Zombie-Leben in BO3-Einheiten: Runde 1 / danach zusätzlich pro Runde |
 | `meleeDamageScale` | 150 | Faust, Schwert, Bogen: Minecraft-Schaden × Faktor (Faust = 150 wie das Messer) |
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
-| `speedBase` / `speedPerRound` / `speedMax` | 0.20 / 0.008 / 0.33 | Laufgeschwindigkeit |
+| `walkerSpeed` / `runnerSpeed` | 0.17 / 0.30 | Tempo der Schlenderer / Läufer |
+| `runnersFromRound` / `runnerChancePerRound` / `runnerChanceMax` | 3 / 0.15 / 0.9 | Ab Runde 3 Läufer, Anteil +15 % pro Runde, höchstens 90 % |
+| `walkerAttackWindupTicks` / `walkerAttackCooldownTicks` | 16 / 24 | Schlenderer: Ausholzeit / Pause zwischen Schlägen (20 Ticks = 1 s) |
+| `runnerAttackWindupTicks` / `runnerAttackCooldownTicks` | 8 / 14 | Läufer: Ausholzeit / Pause zwischen Schlägen |
 | `damageBase` / `damagePerRound` / `damageMax` | 6.7 / 0 / 6.7 | Schaden pro Schlag (drei Schläge bis down wie in BO3) |
 | `boxPrice` / `boxMoveChance` | 950 / 0.2 | Preis eines Kisten-Drehs / Umzugschance pro Dreh |
 | `boxWeapons` | Liste | Waffen der Zufallskiste mit Gewichtung |
