@@ -30,7 +30,7 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   aktiv, wenn die Tür offen ist. Spawnpunkte ohne Zone gehören zur Zone `start`.
 - **Wandwaffen:** Ein Block, an dem man per Rechtsklick eine bestimmte Waffe kauft. Hat man sie schon,
   kauft man Munition (32 Pfeile für Bogen/Armbrust). Gekaufte Waffen sind unzerstörbar.
-  Das können eigene Schusswaffen (z. B. `mczombies:pistol`) oder Vanilla-Waffen sein.
+  Das können eigene Schusswaffen (z. B. `mczombies:kn_44`) oder Vanilla-Waffen sein.
 - **Zufallskiste:** Mehrere mögliche Standorte, aktiv ist jeweils einer (Lichtstrahl-Partikel).
   Ein Dreh kostet 950 Punkte und gibt eine zufällige Waffe. Nach einigen Drehs kann die Kiste
   umziehen: Dann gibt es die Punkte zurück und sie steht woanders.
@@ -42,18 +42,27 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
 ## Features (Phase 3)
 
-- **Sieben Schusswaffen** (Kreativinventar, Tab „Kampf“):
+- **Alle Waffen aus Black Ops III Zombies** (40 Stück, Kreativinventar Tab „Kampf“, Item-ID
+  `mczombies:<name>`, z. B. `mczombies:kn_44`). Werte nach dem Original, Schaden durch 45 geteilt,
+  weil unsere Zombies weniger Leben haben. Wo keine Quelle etwas hergab (v. a. Nachladezeiten,
+  MR6, RPK, XM-53), sind die Werte geschätzt; alles ist in der Config änderbar.
 
-  | Waffe | Item-ID | Besonderheit |
-  |---|---|---|
-  | Pistole | `mczombies:pistol` | Einzelschuss, 8 Schuss |
-  | Maschinenpistole | `mczombies:smg` | Dauerfeuer, sehr schnell, wenig Schaden |
-  | Sturmgewehr | `mczombies:assault_rifle` | Dauerfeuer, Allrounder |
-  | Leichtes MG | `mczombies:lmg` | Dauerfeuer, 100 Schuss, langes Nachladen, durchschlägt 2 Zombies |
-  | Schrotflinte | `mczombies:shotgun` | 8 Kugeln pro Schuss mit Streuung, kurze Reichweite |
-  | Scharfschützengewehr | `mczombies:sniper` | Sehr hoher Schaden, durchschlägt 4 Zombies, ×3 bei Kopftreffer |
-  | Raketenwerfer | `mczombies:rocket_launcher` | Explodiert beim Aufprall (Radius 4), Blöcke bleiben heil |
+  | Klasse | Waffen |
+  |---|---|
+  | Pistolen | `mr6`, `rk5`, `l_car_9`, `bloodhound`, `marshal_16`, `rift_e9` |
+  | Maschinenpistolen | `kuda`, `vmp`, `weevil`, `vesper`, `pharo`, `razorback`, `hg_40`, `bootlegger`, `m1927` |
+  | Sturmgewehre | `kn_44`, `hvk_30`, `icr_1`, `man_o_war`, `sheiva`, `m8a7`, `peacekeeper_mk2` |
+  | Schrotflinten | `krm_262`, `205_brecci`, `haymaker_12`, `argus` |
+  | Leichte MGs | `brm`, `dingo`, `gorgon`, `48_dredge`, `rpk` |
+  | Scharfschützengewehre | `drakon`, `locus`, `svg_100` |
+  | Werfer | `xm_53` |
+  | Wunderwaffen | `ray_gun`, `ray_gun_mk2`, `wunderwaffe_dg2`, `thundergun`, `annihilator` |
 
+  Feuerstoß-Waffen (Pharo, M8A7, 48 Dredge, Rift E9, Ray Gun Mark II) feuern pro Klick mehrere
+  Schüsse. Die Ray Gun schießt einen explodierenden Strahl, die DG-2 einen Kettenblitz über bis zu
+  10 Zombies, die Thundergun eine Druckwelle, die alle Zombies vor dir tötet und wegschleudert.
+  Noch nicht dabei: Apothicon Servant, Wrath of the Ancients, KT-4, GKZ-45 Mk3 (Quest-Waffen anderer Maps).
+  Texturen, Modelle und Namen erzeugt `tools/gen_gun_textures.py`.
 - **Schießen:** Rechtsklick. Automatikwaffen feuern, solange die Taste gehalten wird.
   Treffer sind sofort (Hitscan) und enden an Blöcken; Mitspieler werden nie getroffen.
 - **Munition:** Magazin + Reserve. **R** lädt nach (Taste in den Steuerungs-Optionen änderbar);
@@ -64,8 +73,9 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   beim Kill 100 statt 60 Punkte.
 - **Wandwaffen und Zufallskiste** geben die Schusswaffen voll geladen. Hat man die Waffe schon,
   füllt ein Kauf an der Wand (Munitionspreis) bzw. ein Kisten-Treffer die Munition auf.
-- **Aufrüst-Maschine:** Rechtsklick mit einer Schusswaffe in der Hand für 5000 Punkte:
-  doppelter Schaden, 1,5× Magazin und Reserve, volle Munition, Glitzer und „(Verbessert)“ im Namen.
+- **Aufrüst-Maschine (Pack-a-Punch):** Rechtsklick mit einer Schusswaffe in der Hand für 5000 Punkte:
+  Schaden, Magazin und Reserve wie nach Pack-a-Punch im Original, volle Munition, Glitzer und der
+  Pack-a-Punch-Name (z. B. KN-44 → „Anointed Avenger“).
 
 ## Map: Der Riese (Nachbau von „The Giant“, im Aufbau)
 
@@ -79,7 +89,7 @@ der verschneite Hof vor dem Hauptrechner. `/zombies buildmap riese` baut ihn um 
   Kaugummiautomat (funktioniert ab Phase 4).
 - **Süden:** Uhrturm mit goldener Uhr und rot beleuchtetem Tor, niedrige Mauer mit Stacheldraht.
 - **Norden/Osten:** Fabrikwand mit glühenden Bögen, Zaun mit Stacheldraht, Schornsteine.
-- **Wandwaffen:** Sturmgewehr 500 am Uhrturm, Pistole 500 an der niedrigen Mauer.
+- **Wandwaffen:** Sheiva 500 am Uhrturm, RK5 500 an der niedrigen Mauer (wie im Startraum des Originals).
 - **Fenster:** zwei in den Bögen im Norden, zwei im Zaun im Osten.
 
 Die Tore auf der Terrasse und unter dem Uhrturm führen später in die nächsten Bereiche.
