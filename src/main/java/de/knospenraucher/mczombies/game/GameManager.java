@@ -1,6 +1,7 @@
 package de.knospenraucher.mczombies.game;
 
 import de.knospenraucher.mczombies.MCZombies;
+import de.knospenraucher.mczombies.weapon.GunItem;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.map.MapData;
 import de.knospenraucher.mczombies.network.HudSyncPayload;
@@ -30,6 +31,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.Items;
@@ -184,6 +186,7 @@ public class GameManager {
 				}
 				inventory.clearContent();
 			}
+			giveStartingWeapon(player);
 			preparePlayer(player);
 		}
 
@@ -487,6 +490,30 @@ public class GameManager {
 	// ================================================================ Spieler
 
 	/** Heilt, setzt Spielmodus und teleportiert zum Spieler-Startpunkt. */
+	/** Startwaffe (Standard: MR6) voll geladen in den ersten Slot, wie in BO3. */
+	private void giveStartingWeapon(ServerPlayer player) {
+		String id = ZombiesConfig.get().startingWeapon;
+		if (id == null || id.isBlank()) {
+			return;
+		}
+		Item item = MapMechanics.resolveItem(id);
+		if (item == null) {
+			MCZombies.LOGGER.warn("Unbekannte Startwaffe in der Config: {}", id);
+			return;
+		}
+		ItemStack stack = new ItemStack(item);
+		if (item instanceof GunItem gun) {
+			gun.refill(stack);
+		}
+		Inventory inventory = player.getInventory();
+		if (inventory.getItem(0).isEmpty()) {
+			inventory.setItem(0, stack);
+		} else if (!inventory.add(stack)) {
+			player.drop(stack, false);
+		}
+		inventory.setSelectedSlot(0);
+	}
+
 	private void preparePlayer(ServerPlayer player) {
 		if (ZombiesConfig.get().adventureModeDuringGame) {
 			player.setGameMode(GameType.ADVENTURE);

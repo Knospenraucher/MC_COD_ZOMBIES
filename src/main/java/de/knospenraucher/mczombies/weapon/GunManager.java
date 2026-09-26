@@ -77,10 +77,10 @@ public final class GunManager {
 		ServerPlayNetworking.registerGlobalReceiver(GunActionPayload.TYPE, (payload, context) -> {
 			ServerPlayer player = context.player();
 			context.server().execute(() -> {
-				if (payload.reload()) {
-					startReload(player, true);
-				} else {
-					shoot(player);
+				switch (payload.action()) {
+					case GunActionPayload.RELOAD -> startReload(player, true);
+					case GunActionPayload.MELEE -> KnifeMelee.stab(player);
+					default -> shoot(player);
 				}
 			});
 		});

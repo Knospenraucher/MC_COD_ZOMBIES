@@ -279,6 +279,8 @@ public class ZombiesConfig {
 	public boolean adventureModeDuringGame = true;
 	/** Spieler starten nur mit der Faust; ihr Inventar kommt bei Spielende zurück. */
 	public boolean startWithEmptyInventory = true;
+	/** Waffe, mit der jeder Spieler startet (leer = keine, nur Faust und Messer). */
+	public String startingWeapon = "mczombies:mr6";
 	/** Andere Mobs (Tiere, Monster) während des Spiels aus der Welt entfernen. */
 	public boolean removeOtherMobsDuringGame = true;
 

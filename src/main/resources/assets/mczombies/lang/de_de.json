@@ -79,5 +79,6 @@
   "item.mczombies.thundergun": "Thundergun",
   "item.mczombies.thundergun.upgraded": "Zeus Cannon",
   "item.mczombies.annihilator": "Annihilator",
-  "item.mczombies.annihilator.upgraded": "Annihilator (Pack-a-Punch)"
+  "item.mczombies.annihilator.upgraded": "Annihilator (Pack-a-Punch)",
+  "key.mczombies.melee": "Messer (Nahkampf)"
 }

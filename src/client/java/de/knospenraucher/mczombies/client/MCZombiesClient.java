@@ -16,6 +16,7 @@ public class MCZombiesClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientGameState.clear());
 
 		HudElementRegistry.addLast(MCZombies.id("hud"), ZombiesHud::render);
+		HudElementRegistry.addLast(MCZombies.id("knife"), KnifeAnimation::render);
 		GunInput.register();
 	}
 }
