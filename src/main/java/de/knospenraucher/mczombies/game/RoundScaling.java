@@ -20,8 +20,9 @@ public final class RoundScaling {
 	}
 
 	/**
-	 * Leben: in den ersten Runden fest aus {@code healthEarlyRounds}, danach
+	 * Leben in BO3-Einheiten: in den ersten Runden fest aus {@code healthEarlyRounds}, danach
 	 * pro Runde {@code healthPerRound} mehr und ab {@code healthLinearUntilRound} exponentiell.
+	 * Standard wie in Black Ops III: 150, +100 pro Runde bis Runde 9 (950), danach ×1,1 pro Runde.
 	 */
 	public static double health(int round) {
 		ZombiesConfig c = ZombiesConfig.get();
@@ -38,7 +39,7 @@ public final class RoundScaling {
 				health *= Math.pow(c.healthFactorAfterLinear, round - Math.max(c.healthLinearUntilRound, early.size()));
 			}
 		}
-		return Math.min(Math.max(1.0, health), Math.min(c.healthMax, 1024.0));
+		return Math.min(Math.max(1.0, health), c.healthMax);
 	}
 
 	public static double speed(int round) {

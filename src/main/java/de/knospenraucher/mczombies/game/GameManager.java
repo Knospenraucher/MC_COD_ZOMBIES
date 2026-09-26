@@ -345,8 +345,10 @@ public class GameManager {
 		zombie.setPersistenceRequired();
 		zombie.addTag(ZOMBIE_TAG);
 
+		// Echtes (BO3-)Leben verwaltet ZombieHealth; in Minecraft haben Zombies immer 20.
 		double health = RoundScaling.health(round);
-		setAttribute(zombie, Attributes.MAX_HEALTH, health);
+		ZombieHealth.init(zombie, health);
+		setAttribute(zombie, Attributes.MAX_HEALTH, ZombieHealth.MINECRAFT_HEALTH);
 		setAttribute(zombie, Attributes.MOVEMENT_SPEED, RoundScaling.speed(round));
 		setAttribute(zombie, Attributes.ATTACK_DAMAGE, RoundScaling.damage(round));
 		setAttribute(zombie, Attributes.FOLLOW_RANGE, ZombiesConfig.get().followRange);
@@ -354,7 +356,7 @@ public class GameManager {
 		setAttribute(zombie, Attributes.SPAWN_REINFORCEMENTS_CHANCE, 0.0);
 		// Zombies haben von Haus aus 2 Rüstungspunkte; die Härte kommt bei uns nur über das Leben.
 		setAttribute(zombie, Attributes.ARMOR, 0.0);
-		zombie.setHealth((float) health);
+		zombie.setHealth(ZombieHealth.MINECRAFT_HEALTH);
 		// Ein unzerstörbarer Helm verhindert, dass Zombies tagsüber verbrennen.
 		ItemStack helmet = new ItemStack(Items.LEATHER_HELMET);
 		helmet.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
@@ -442,6 +444,7 @@ public class GameManager {
 			zombie.discard();
 		}
 		aliveZombies.clear();
+		ZombieHealth.clear();
 		zombiesToSpawn = 0;
 		removeLeftoverZombies();
 	}
@@ -476,6 +479,9 @@ public class GameManager {
 	/** Aufgerufen, wenn ein Rundenzombie stirbt (egal wodurch). */
 	public void onZombieDeath(Entity zombie) {
 		aliveZombies.remove(zombie);
+		if (zombie instanceof LivingEntity living) {
+			ZombieHealth.remove(living);
+		}
 	}
 
 	// ================================================================ Spieler

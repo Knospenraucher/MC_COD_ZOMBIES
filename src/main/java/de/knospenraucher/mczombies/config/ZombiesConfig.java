@@ -27,7 +27,7 @@ public class ZombiesConfig {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("mczombies.json");
 
 	/** Aktuelle Version der Config-Datei (für automatische Anpassung alter Dateien). */
-	private static final int CURRENT_VERSION = 6;
+	private static final int CURRENT_VERSION = 7;
 
 	private static ZombiesConfig instance = new ZombiesConfig();
 
@@ -76,30 +76,38 @@ public class ZombiesConfig {
 
 	// ---------------------------------------------------------------- Zombie-Werte
 	/** Nur noch Rückfallwert, falls healthEarlyRounds leer ist. */
-	public double healthBase = 1.0;
+	public double healthBase = 150.0;
 	/**
-	 * Leben in den ersten Runden (2 = ein Herz, ein Faustschlag macht 1).
-	 * Standard: Runde 1 ein Schlag, Runde 2 und 3 zwei Schläge.
+	 * Leben in den ersten Runden, in Black-Ops-III-Einheiten (wie der Waffenschaden).
+	 * Standard wie im Original: Runde 1 hat 150.
 	 */
-	public List<Double> healthEarlyRounds = new ArrayList<>(List.of(1.0, 2.0, 2.0));
+	public List<Double> healthEarlyRounds = new ArrayList<>(List.of(150.0));
 	/** Danach pro Runde so viel mehr Leben, bis healthLinearUntilRound. */
-	public double healthPerRound = 3.0;
+	public double healthPerRound = 100.0;
 	/** Bis zu dieser Runde steigt das Leben linear ... */
 	public int healthLinearUntilRound = 9;
 	/** ... danach wird es pro Runde mit diesem Faktor multipliziert. */
 	public double healthFactorAfterLinear = 1.1;
-	/** Obergrenze (Minecraft erlaubt maximal 1024). */
-	public double healthMax = 1024.0;
+	/** Obergrenze des Zombie-Lebens. */
+	public double healthMax = 1.0E9;
+	/**
+	 * Schaden, der nicht aus Schusswaffen kommt (Faust, Schwert, Bogen), wird damit malgenommen.
+	 * Faust (1) × 150 = 150, so viel wie das Messer in BO3: Runde 1 stirbt mit einem Schlag.
+	 */
+	public double meleeDamageScale = 150.0;
 
 	/** Laufgeschwindigkeit in Runde 1 (Vanilla-Zombie: 0.23). */
 	public double speedBase = 0.20;
 	public double speedPerRound = 0.008;
 	public double speedMax = 0.33;
 
-	/** Angriffsschaden in Runde 1. */
-	public double damageBase = 2.0;
-	public double damagePerRound = 0.25;
-	public double damageMax = 10.0;
+	/**
+	 * Angriffsschaden der Zombies. In BO3 macht ein Schlag 50 von 150 Leben, also ist man nach
+	 * drei Schlägen down, egal in welcher Runde. 6.7 von 20 Minecraft-Leben entspricht dem.
+	 */
+	public double damageBase = 6.7;
+	public double damagePerRound = 0.0;
+	public double damageMax = 6.7;
 
 	/** Wie weit Zombies Spieler wahrnehmen (Blöcke). */
 	public double followRange = 64.0;
@@ -288,6 +296,19 @@ public class ZombiesConfig {
 			// Runde 2 und 3: zwei Faustschläge, danach langsamer Anstieg.
 			healthEarlyRounds = new ArrayList<>(List.of(1.0, 2.0, 2.0));
 			healthPerRound = 3.0;
+		}
+		if (configVersion < 7) {
+			// Originalwerte aus Black Ops III: Zombie-Leben, Zombie-Schaden, Waffenschaden 1:1.
+			healthBase = 150.0;
+			healthEarlyRounds = new ArrayList<>(List.of(150.0));
+			healthPerRound = 100.0;
+			healthLinearUntilRound = 9;
+			healthFactorAfterLinear = 1.1;
+			healthMax = 1.0E9;
+			damageBase = 6.7;
+			damagePerRound = 0.0;
+			damageMax = 6.7;
+			guns = defaultGuns();
 		}
 		if (configVersion < 6) {
 			// Black-Ops-III-Waffen ersetzen die sieben Platzhalterwaffen.

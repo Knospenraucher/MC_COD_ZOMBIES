@@ -11,13 +11,13 @@ import java.util.List;
  * <p>
  * Schaden, Magazin, Reserve, Feuerrate und Pack-a-Punch-Werte folgen dem Original (Fandom-Wiki,
  * NamuWiki); wo keine Quelle etwas hergab, sind die Werte geschätzt (mit "geschätzt" markiert).
- * BO3-Schaden wird durch {@link #DAMAGE_SCALE} geteilt, weil unsere Zombies viel weniger Leben haben
- * (Runde 9: 20 statt 950). Nachladezeiten stehen im Original kaum irgendwo und sind je Klasse geschätzt.
+ * Der Schaden ist 1:1 der BO3-Schaden, denn auch die Zombies haben ihr BO3-Leben (siehe ZombieHealth).
+ * Nachladezeiten stehen im Original kaum irgendwo und sind je Klasse geschätzt.
  * Die Werte sind nur Standards; die Config kann jede Waffe überschreiben.
  */
 public final class GunCatalog {
-	/** BO3-Schaden / dieser Wert = unser Schaden. */
-	public static final double DAMAGE_SCALE = 45.0;
+	/** Schaden, der jeden Zombie sofort tötet (Wunderwaffen mit "unendlich" Schaden im Original). */
+	private static final double INSTAKILL = 1.0E9;
 
 	/** Eine Waffe: Item-Name, Anzeigename, Name nach Pack-a-Punch, Klasse und Standardwerte. */
 	public record Def(String id, String name, String papName, String category, GunStats stats) {
@@ -32,7 +32,7 @@ public final class GunCatalog {
 		gun("l_car_9", "L-CAR 9", "Flux Collider 935", "pistol").dmg(150, 225).ammo(20, 160, 40, 200).rate(2, true);
 		gun("bloodhound", "Bloodhound", "Meat Wagon", "pistol").dmg(250, 1200).ammo(8, 72, 8, 50).rate(7, false)
 				.head(3.0).upgradedExplosion(1.5);
-		gun("marshal_16", "Marshal 16", "Perun & Veles", "pistol").dmg(175, 775).ammo(2, 152, 6, 230).rate(8, false)
+		gun("marshal_16", "Marshal 16", "Perun & Veles", "pistol").dmg(700, 775).ammo(2, 152, 6, 230).rate(8, false)
 				.pellets(4, 0.08).range(20);
 		gun("rift_e9", "Rift E9", "Elder Invader", "pistol").dmg(120, 220).ammo(12, 144, 68, 272).rate(6, false)
 				.burst(2, 2); // Schaden geschätzt
@@ -95,11 +95,12 @@ public final class GunCatalog {
 				.rate(5, false).explosion(2.0).special("ray");
 		gun("ray_gun_mk2", "Ray Gun Mark II", "Porter's Mark II Ray Gun", "wonder").dmg(2300, 4600)
 				.ammo(21, 162, 42, 201).rate(7, false).burst(3, 1).reload(60).pen(2).special("ray");
-		gun("wunderwaffe_dg2", "Wunderwaffe DG-2", "Wunderwaffe DG-3 JZ", "wonder").raw(10000, 10000)
+		gun("wunderwaffe_dg2", "Wunderwaffe DG-2", "Wunderwaffe DG-3 JZ", "wonder").raw(INSTAKILL, INSTAKILL)
 				.ammo(3, 15, 6, 30).rate(20, false).reload(124).special("lightning");
-		gun("thundergun", "Thundergun", "Zeus Cannon", "wonder").raw(10000, 10000).ammo(2, 12, 4, 24)
+		gun("thundergun", "Thundergun", "Zeus Cannon", "wonder").raw(INSTAKILL, INSTAKILL).ammo(2, 12, 4, 24)
 				.rate(12, false).reload(40).range(12).special("thunder");
-		gun("annihilator", "Annihilator", "Annihilator (Pack-a-Punch)", "wonder").raw(10000, 10000)
+		// Annihilator: tötet laut Wiki bis Runde 24 mit einem Treffer (Runde 24: gut 3900 Leben)
+		gun("annihilator", "Annihilator", "Annihilator (Pack-a-Punch)", "wonder").raw(4000, 8000)
 				.ammo(6, 12, 6, 24).rate(10, false).reload(50).pen(5).special("annihilate");
 	}
 
@@ -146,14 +147,12 @@ public final class GunCatalog {
 			this.s = s;
 		}
 
-		/** Schaden im BO3-Maßstab, wird umgerechnet. */
+		/** BO3-Schaden pro Kugel (Schrotflinten: pro Schrotkugel), ohne und mit Pack-a-Punch. */
 		Builder dmg(double bo3, double bo3Upgraded) {
-			s.damage = scale(bo3);
-			s.upgradedDamage = scale(bo3Upgraded);
-			return this;
+			return raw(bo3, bo3Upgraded);
 		}
 
-		/** Schaden ohne Umrechnung (Wunderwaffen, die sofort töten). */
+		/** Schaden, der nicht aus einer Wiki-Tabelle stammt (Wunderwaffen). */
 		Builder raw(double damage, double upgraded) {
 			s.damage = damage;
 			s.upgradedDamage = upgraded;
@@ -224,10 +223,6 @@ public final class GunCatalog {
 		Builder special(String special) {
 			s.special = special;
 			return this;
-		}
-
-		private static double scale(double bo3) {
-			return Math.max(0.5, Math.round(bo3 / DAMAGE_SCALE * 10.0) / 10.0);
 		}
 	}
 }
