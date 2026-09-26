@@ -298,8 +298,7 @@ public class MapMechanics {
 		}
 		GunItem.setUpgraded(stack);
 		gun.refill(stack);
-		stack.set(DataComponents.ITEM_NAME, Component.translatable("item.mczombies." + gun.key())
-				.append(" (Verbessert)").withStyle(ChatFormatting.LIGHT_PURPLE));
+		stack.set(DataComponents.ITEM_NAME, Component.translatable(gun.upgradedNameKey()).withStyle(ChatFormatting.LIGHT_PURPLE));
 		level.playSound(null, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
 				SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.0F, 1.2F);
 		level.sendParticles(ParticleTypes.ENCHANT, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5,
@@ -444,8 +443,18 @@ public class MapMechanics {
 
 	// ================================================================ Items
 
+	/** Frühere Platzhalterwaffen und ihr BO3-Ersatz (für ältere Maps und Configs). */
+	private static final Map<String, String> OLD_GUNS = Map.of(
+			"mczombies:pistol", "mczombies:mr6",
+			"mczombies:smg", "mczombies:kuda",
+			"mczombies:assault_rifle", "mczombies:kn_44",
+			"mczombies:lmg", "mczombies:dingo",
+			"mczombies:shotgun", "mczombies:krm_262",
+			"mczombies:sniper", "mczombies:drakon",
+			"mczombies:rocket_launcher", "mczombies:xm_53");
+
 	public static Item resolveItem(String id) {
-		Identifier key = Identifier.tryParse(id);
+		Identifier key = Identifier.tryParse(OLD_GUNS.getOrDefault(id, id));
 		if (key == null) {
 			return null;
 		}

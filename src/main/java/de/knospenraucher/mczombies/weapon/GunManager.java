@@ -49,6 +49,8 @@ public final class GunManager {
 	private static final Map<UUID, Long> nextShot = new HashMap<>();
 	/** Laufende Nachladevorgänge je Spieler. */
 	private static final Map<UUID, Reload> reloads = new HashMap<>();
+	/** Laufende Feuerstöße je Spieler. */
+	private static final Map<UUID, Burst> bursts = new HashMap<>();
 	private static long ticks;
 
 	/** Gerade verarbeiteter Schuss; {@code CombatEvents} liest ihn für Kill-Punkte. */
@@ -61,7 +63,11 @@ public final class GunManager {
 	private record Reload(int slot, long endTick) {
 	}
 
-	private record BulletHit(LivingEntity target, Vec3 point, double distance) {
+	/** Noch ausstehende Schüsse eines Feuerstoßes. */
+	private record Burst(int slot, int remaining, long nextTick) {
+	}
+
+	record BulletHit(LivingEntity target, Vec3 point, double distance) {
 	}
 
 	private GunManager() {
@@ -120,23 +126,49 @@ public final class GunManager {
 			return;
 		}
 
+		int burst = Math.max(1, stats.burst);
+		int interval = Math.max(1, stats.burstIntervalTicks);
+		nextShot.put(player.getUUID(), ticks + Math.max(1, stats.fireRateTicks) + (long) (burst - 1) * interval);
+		fireOnce(level, player, stack, gun);
+		if (burst > 1) {
+			bursts.put(player.getUUID(), new Burst(player.getInventory().getSelectedSlot(), burst - 1, ticks + interval));
+		}
+	}
+
+	/** Ein einzelner Schuss (auch innerhalb eines Feuerstoßes); verbraucht eine Kugel. */
+	private static void fireOnce(ServerLevel level, ServerPlayer player, ItemStack stack, GunItem gun) {
+		GunStats stats = gun.stats();
+		int mag = gun.getMag(stack);
+		int reserve = gun.getReserve(stack);
+		if (mag <= 0) {
+			return;
+		}
 		gun.setAmmo(stack, mag - 1, reserve);
-		nextShot.put(player.getUUID(), ticks + Math.max(1, stats.fireRateTicks));
-		playShotSound(level, player, gun.key(), GunItem.isUpgraded(stack));
+		boolean upgraded = GunItem.isUpgraded(stack);
+		playShotSound(level, player, gun, upgraded);
 
 		float damage = (float) gun.damage(stack);
-		if (stats.explosionRadius > 0) {
-			fireRocket(level, player, stats, damage);
-		} else {
-			fireBullets(level, player, stats, damage);
+		String special = stats.special == null ? "" : stats.special;
+		double radius = gun.explosionRadius(stack);
+		switch (special) {
+			case "lightning" -> WonderWeapons.lightning(level, player, stats, damage, upgraded);
+			case "thunder" -> WonderWeapons.thunder(level, player, stats, damage, upgraded);
+			default -> {
+				if (radius > 0) {
+					fireRocket(level, player, stats, damage, radius, special.equals("ray"), upgraded);
+				} else {
+					fireBullets(level, player, stats, damage, special.equals("annihilate"));
+				}
+			}
 		}
 
 		if (mag - 1 == 0 && reserve > 0) {
+			bursts.remove(player.getUUID());
 			startReload(player, false);
 		}
 	}
 
-	private static void fireBullets(ServerLevel level, ServerPlayer player, GunStats stats, float damage) {
+	private static void fireBullets(ServerLevel level, ServerPlayer player, GunStats stats, float damage, boolean annihilate) {
 		Vec3 eye = player.getEyePosition();
 		// Treffer aller Kugeln eines Schusses sammeln (Schrotflinte), damit jeder Gegner
 		// den Schaden als einen einzigen Treffer bekommt.
@@ -158,6 +190,12 @@ public final class GunManager {
 				tracerEnd = hit.point();
 				level.sendParticles(headshot ? ParticleTypes.ENCHANTED_HIT : ParticleTypes.CRIT,
 						hit.point().x, hit.point().y, hit.point().z, 4, 0.05, 0.05, 0.05, 0.1);
+				if (annihilate) {
+					// Annihilator: der Zombie zerplatzt.
+					AABB box = hit.target().getBoundingBox();
+					level.sendParticles(ParticleTypes.CRIMSON_SPORE, box.getCenter().x, box.getCenter().y, box.getCenter().z,
+							30, 0.3, 0.5, 0.3, 0.1);
+				}
 			}
 			if (hits.isEmpty()) {
 				level.sendParticles(ParticleTypes.SMOKE, end.x, end.y, end.z, 2, 0.02, 0.02, 0.02, 0.0);
@@ -168,24 +206,34 @@ public final class GunManager {
 				hurt(level, player, target, amount, headshotByTarget.getOrDefault(target, false)));
 	}
 
-	private static void fireRocket(ServerLevel level, ServerPlayer player, GunStats stats, float damage) {
+	private static void fireRocket(ServerLevel level, ServerPlayer player, GunStats stats, float damage, double radius,
+			boolean ray, boolean upgraded) {
 		Vec3 eye = player.getEyePosition();
 		Vec3 dir = spread(player.getLookAngle(), stats.spread, player.getRandom());
 		Vec3 end = blockLimitedEnd(level, player, eye, dir, stats.range);
 		List<BulletHit> hits = traceEntities(level, player, eye, end);
 		Vec3 impact = hits.isEmpty() ? end : hits.get(0).point();
 
-		// Rauchspur
+		// Rauchspur (Ray Gun: grüner bzw. roter Strahl)
 		double length = impact.distanceTo(eye);
-		for (double d = 1.0; d < length; d += 1.0) {
+		for (double d = 1.0; d < length; d += ray ? 0.5 : 1.0) {
 			Vec3 p = eye.add(dir.scale(d));
-			level.sendParticles(ParticleTypes.SMOKE, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
+			if (ray) {
+				level.sendParticles(upgraded ? ParticleTypes.FLAME : ParticleTypes.HAPPY_VILLAGER, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
+			} else {
+				level.sendParticles(ParticleTypes.SMOKE, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
+			}
 		}
 
-		level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, impact.x, impact.y, impact.z, 1, 0.0, 0.0, 0.0, 0.0);
-		level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 2.0F, 1.0F);
+		if (ray) {
+			level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, 1, 0.0, 0.0, 0.0, 0.0);
+			level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS, 1.5F, 0.6F);
+		} else {
+			level.sendParticles(radius >= 3 ? ParticleTypes.EXPLOSION_EMITTER : ParticleTypes.EXPLOSION,
+					impact.x, impact.y, impact.z, 1, 0.0, 0.0, 0.0, 0.0);
+			level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 2.0F, 1.0F);
+		}
 
-		double radius = stats.explosionRadius;
 		AABB area = new AABB(impact.x - radius, impact.y - radius, impact.z - radius,
 				impact.x + radius, impact.y + radius, impact.z + radius);
 		for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isTarget(e, player))) {
@@ -200,14 +248,14 @@ public final class GunManager {
 	}
 
 	/** Endpunkt eines Strahls: Reichweite oder der erste getroffene Block. */
-	private static Vec3 blockLimitedEnd(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 dir, double range) {
+	static Vec3 blockLimitedEnd(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 dir, double range) {
 		Vec3 end = eye.add(dir.scale(range));
 		BlockHitResult blockHit = level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
 		return blockHit.getType() == HitResult.Type.MISS ? end : blockHit.getLocation();
 	}
 
 	/** Alle Gegner auf der Strecke eye → end, nach Entfernung sortiert. */
-	private static List<BulletHit> traceEntities(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 end) {
+	static List<BulletHit> traceEntities(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 end) {
 		AABB area = new AABB(eye.x, eye.y, eye.z, end.x, end.y, end.z).inflate(1.0);
 		List<BulletHit> hits = new ArrayList<>();
 		for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isTarget(e, player))) {
@@ -219,7 +267,7 @@ public final class GunManager {
 	}
 
 	/** Spieler (Mitspieler) werden nie getroffen. */
-	private static boolean isTarget(LivingEntity entity, ServerPlayer shooter) {
+	static boolean isTarget(LivingEntity entity, ServerPlayer shooter) {
 		return entity != shooter && entity.isAlive() && !(entity instanceof Player);
 	}
 
@@ -236,7 +284,7 @@ public final class GunManager {
 	}
 
 	/** Schaden als Spielerangriff, damit Punkte und Kills dem Schützen gutgeschrieben werden. */
-	private static void hurt(ServerLevel level, ServerPlayer shooter, LivingEntity target, float amount, boolean headshot) {
+	static void hurt(ServerLevel level, ServerPlayer shooter, LivingEntity target, float amount, boolean headshot) {
 		Shot previous = currentShot;
 		currentShot = new Shot(shooter, headshot);
 		try {
@@ -263,26 +311,45 @@ public final class GunManager {
 		}
 	}
 
-	private static void playShotSound(ServerLevel level, ServerPlayer player, String key, boolean upgraded) {
+	private static void playShotSound(ServerLevel level, ServerPlayer player, GunItem gun, boolean upgraded) {
 		double x = player.getX();
 		double y = player.getEyeY();
 		double z = player.getZ();
 		float pitchBonus = upgraded ? 0.15F : 0.0F;
-		switch (key) {
+		String special = gun.stats().special == null ? "" : gun.stats().special;
+		switch (special) {
+			case "ray" -> {
+				level.playSound(null, x, y, z, SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 1.2F, 1.8F + pitchBonus);
+				return;
+			}
+			case "lightning" -> {
+				level.playSound(null, x, y, z, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 0.8F, 1.6F + pitchBonus);
+				return;
+			}
+			case "thunder" -> {
+				level.playSound(null, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 2.0F, 0.5F + pitchBonus);
+				return;
+			}
+			default -> {
+			}
+		}
+		switch (gun.category()) {
 			case "shotgun" -> {
 				level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.PLAYERS, 1.5F, 0.6F + pitchBonus);
 				level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 1.0F, 0.6F + pitchBonus);
 			}
 			case "sniper" ->
 					level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.PLAYERS, 2.0F, 0.5F + pitchBonus);
-			case "rocket_launcher" ->
+			case "launcher" ->
 					level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.PLAYERS, 2.0F, 0.6F + pitchBonus);
 			case "lmg" ->
 					level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.1F + pitchBonus);
-			case "assault_rifle" ->
+			case "rifle" ->
 					level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.4F + pitchBonus);
 			case "smg" ->
 					level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 0.8F, 1.9F + pitchBonus);
+			case "wonder" ->
+					level.playSound(null, x, y, z, SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.PLAYERS, 1.5F, 1.2F + pitchBonus);
 			default ->
 					level.playSound(null, x, y, z, SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 0.9F, 1.6F + pitchBonus);
 		}
@@ -321,6 +388,7 @@ public final class GunManager {
 
 	private static void tick(MinecraftServer server) {
 		ticks++;
+		tickBursts(server);
 		Iterator<Map.Entry<UUID, Reload>> it = reloads.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry<UUID, Reload> entry = it.next();
@@ -346,6 +414,36 @@ public final class GunManager {
 				it.remove();
 			}
 		}
+	}
+
+	private static void tickBursts(MinecraftServer server) {
+		Iterator<Map.Entry<UUID, Burst>> it = bursts.entrySet().iterator();
+		List<Runnable> shots = new ArrayList<>();
+		while (it.hasNext()) {
+			Map.Entry<UUID, Burst> entry = it.next();
+			Burst burst = entry.getValue();
+			if (ticks < burst.nextTick()) {
+				continue;
+			}
+			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+			if (player == null || !player.isAlive() || player.isSpectator()
+					|| player.getInventory().getSelectedSlot() != burst.slot()
+					|| !(player.getMainHandItem().getItem() instanceof GunItem gun)
+					|| reloads.containsKey(player.getUUID())) {
+				it.remove();
+				continue;
+			}
+			ItemStack stack = player.getMainHandItem();
+			if (burst.remaining() <= 1) {
+				it.remove();
+			} else {
+				int interval = Math.max(1, gun.stats().burstIntervalTicks);
+				entry.setValue(new Burst(burst.slot(), burst.remaining() - 1, ticks + interval));
+			}
+			// Erst nach dem Durchlauf schießen: fireOnce kann den Feuerstoß beenden (Magazin leer).
+			shots.add(() -> fireOnce((ServerLevel) player.level(), player, stack, gun));
+		}
+		shots.forEach(Runnable::run);
 	}
 
 	private static void finishReload(ServerPlayer player, ItemStack stack, GunItem gun) {

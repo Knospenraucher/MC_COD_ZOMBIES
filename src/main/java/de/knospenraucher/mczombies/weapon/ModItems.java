@@ -18,24 +18,22 @@ import java.util.List;
 public final class ModItems {
 	public static final List<GunItem> GUNS = new ArrayList<>();
 
-	public static final GunItem PISTOL = gun("pistol");
-	public static final GunItem SMG = gun("smg");
-	public static final GunItem ASSAULT_RIFLE = gun("assault_rifle");
-	public static final GunItem LMG = gun("lmg");
-	public static final GunItem SHOTGUN = gun("shotgun");
-	public static final GunItem SNIPER = gun("sniper");
-	public static final GunItem ROCKET_LAUNCHER = gun("rocket_launcher");
+	static {
+		for (GunCatalog.Def def : GunCatalog.all()) {
+			gun(def.id(), def.category());
+		}
+	}
 
 	private ModItems() {
 	}
 
-	private static GunItem gun(String name) {
+	private static GunItem gun(String name, String category) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, MCZombies.id(name));
 		Item.Properties properties = new Item.Properties()
 				.setId(key)
 				.stacksTo(1)
 				.component(DataComponents.UNBREAKABLE, Unit.INSTANCE);
-		GunItem item = Registry.register(BuiltInRegistries.ITEM, key, new GunItem(name, properties));
+		GunItem item = Registry.register(BuiltInRegistries.ITEM, key, new GunItem(name, category, properties));
 		GUNS.add(item);
 		return item;
 	}

@@ -151,14 +151,14 @@ public final class RieseMap {
 		fill(2, 1, 14, 2, 3, 14, Blocks.SHROOMLIGHT);
 		fill(-2, 4, 14, 2, 4, 14, Blocks.SHROOMLIGHT);
 
-		wallWeapon(7, 2, 14, "mczombies:assault_rifle", 500, 250);
+		wallWeapon(7, 2, 14, "mczombies:sheiva", 500, 250);
 
 		// Niedrige Mauer mit Stacheldraht vor dem Uhrturm, am Ende die Pistole
 		fill(-17, 1, 9, -7, 2, 9, Blocks.BRICKS);
 		for (int x = -17; x <= -8; x += 2) {
 			set(x, 3, 9, Blocks.COBWEB);
 		}
-		wallWeapon(-7, 2, 9, "mczombies:pistol", 500, 250);
+		wallWeapon(-7, 2, 9, "mczombies:rk5", 500, 250);
 	}
 
 	// ================================================================ Westen: „Waffenfabrik der Riese“

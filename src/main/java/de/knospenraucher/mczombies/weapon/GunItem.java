@@ -30,16 +30,28 @@ public class GunItem extends Item {
 	private static final String UPGRADED = "upgraded";
 	private static final String RELOADING = "reloading";
 
-	/** Name der Waffe in der Config, z. B. "pistol". */
+	/** Name der Waffe in der Config, z. B. "kn_44". */
 	private final String key;
+	/** Waffenklasse (pistol, smg, rifle, shotgun, lmg, sniper, launcher, wonder), bestimmt u. a. den Klang. */
+	private final String category;
 
-	public GunItem(String key, Properties properties) {
+	public GunItem(String key, String category, Properties properties) {
 		super(properties);
 		this.key = key;
+		this.category = category;
 	}
 
 	public String key() {
 		return key;
+	}
+
+	public String category() {
+		return category;
+	}
+
+	/** Übersetzungsschlüssel des Namens nach Pack-a-Punch. */
+	public String upgradedNameKey() {
+		return getDescriptionId() + ".upgraded";
 	}
 
 	public GunStats stats() {
@@ -49,20 +61,31 @@ public class GunItem extends Item {
 	// ---------------------------------------------------------------- Werte mit Aufrüstung
 
 	public double damage(ItemStack stack) {
-		double damage = stats().damage;
-		return isUpgraded(stack) ? damage * ZombiesConfig.get().upgradeDamageMultiplier : damage;
+		GunStats s = stats();
+		if (!isUpgraded(stack)) {
+			return s.damage;
+		}
+		return s.upgradedDamage > 0 ? s.upgradedDamage : s.damage * ZombiesConfig.get().upgradeDamageMultiplier;
 	}
 
 	public int magazineSize(ItemStack stack) {
-		return scaled(stack, stats().magazine);
+		return scaled(stack, stats().magazine, stats().upgradedMagazine);
 	}
 
 	public int maxReserve(ItemStack stack) {
-		return scaled(stack, stats().reserve);
+		return scaled(stack, stats().reserve, stats().upgradedReserve);
 	}
 
-	private static int scaled(ItemStack stack, int value) {
-		return isUpgraded(stack) ? (int) Math.round(value * ZombiesConfig.get().upgradeAmmoMultiplier) : value;
+	public double explosionRadius(ItemStack stack) {
+		GunStats s = stats();
+		return isUpgraded(stack) && s.upgradedExplosionRadius > 0 ? s.upgradedExplosionRadius : s.explosionRadius;
+	}
+
+	private static int scaled(ItemStack stack, int value, int upgraded) {
+		if (!isUpgraded(stack)) {
+			return value;
+		}
+		return upgraded > 0 ? upgraded : (int) Math.round(value * ZombiesConfig.get().upgradeAmmoMultiplier);
 	}
 
 	// ---------------------------------------------------------------- Munition (Custom-Daten)

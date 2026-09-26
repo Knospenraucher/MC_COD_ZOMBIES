@@ -3,6 +3,7 @@ package de.knospenraucher.mczombies.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.knospenraucher.mczombies.MCZombies;
+import de.knospenraucher.mczombies.weapon.GunCatalog;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ public class ZombiesConfig {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("mczombies.json");
 
 	/** Aktuelle Version der Config-Datei (für automatische Anpassung alter Dateien). */
-	private static final int CURRENT_VERSION = 5;
+	private static final int CURRENT_VERSION = 6;
 
 	private static ZombiesConfig instance = new ZombiesConfig();
 
@@ -115,14 +116,37 @@ public class ZombiesConfig {
 
 	private static List<BoxEntry> defaultBoxWeapons() {
 		return new ArrayList<>(List.of(
-				new BoxEntry("mczombies:pistol", 6),
-				new BoxEntry("mczombies:smg", 10),
-				new BoxEntry("mczombies:shotgun", 10),
-				new BoxEntry("mczombies:assault_rifle", 10),
-				new BoxEntry("mczombies:lmg", 7),
-				new BoxEntry("mczombies:sniper", 6),
-				new BoxEntry("mczombies:rocket_launcher", 3),
-				new BoxEntry("minecraft:diamond_sword", 4)));
+				// Inhalt der Box auf The Giant
+				new BoxEntry("mczombies:ray_gun", 3),
+				new BoxEntry("mczombies:wunderwaffe_dg2", 2),
+				new BoxEntry("mczombies:vmp", 8),
+				new BoxEntry("mczombies:weevil", 8),
+				new BoxEntry("mczombies:pharo", 8),
+				new BoxEntry("mczombies:man_o_war", 7),
+				new BoxEntry("mczombies:hvk_30", 8),
+				new BoxEntry("mczombies:sheiva", 8),
+				new BoxEntry("mczombies:icr_1", 8),
+				new BoxEntry("mczombies:205_brecci", 8),
+				new BoxEntry("mczombies:argus", 7),
+				new BoxEntry("mczombies:haymaker_12", 7),
+				new BoxEntry("mczombies:dingo", 7),
+				new BoxEntry("mczombies:brm", 7),
+				new BoxEntry("mczombies:48_dredge", 7),
+				new BoxEntry("mczombies:gorgon", 7),
+				new BoxEntry("mczombies:rpk", 7),
+				new BoxEntry("mczombies:locus", 6),
+				new BoxEntry("mczombies:drakon", 6),
+				new BoxEntry("mczombies:svg_100", 6),
+				new BoxEntry("mczombies:xm_53", 5),
+				// Black-Market-/DLC-Waffen, seltener
+				new BoxEntry("mczombies:bloodhound", 3),
+				new BoxEntry("mczombies:marshal_16", 3),
+				new BoxEntry("mczombies:rift_e9", 3),
+				new BoxEntry("mczombies:hg_40", 3),
+				new BoxEntry("mczombies:bootlegger", 3),
+				new BoxEntry("mczombies:m1927", 3),
+				new BoxEntry("mczombies:peacekeeper_mk2", 3),
+				new BoxEntry("mczombies:thundergun", 1)));
 	}
 
 	/** Eintrag der Waffenliste der Zufallskiste. */
@@ -153,17 +177,12 @@ public class ZombiesConfig {
 	/** Magazin und Reserve aufgerüsteter Waffen = Wert × dieser Faktor. */
 	public double upgradeAmmoMultiplier = 1.5;
 
-	/** Standardwerte aller Schusswaffen. */
+	/** Standardwerte aller Schusswaffen (siehe {@link GunCatalog}). */
 	public static Map<String, GunStats> defaultGuns() {
 		Map<String, GunStats> guns = new LinkedHashMap<>();
-		//                         Schaden Magazin Reserve Feuerrate Nachladen Reichweite Streuung Kugeln Auto Durchschlag Explosion Kopf
-		guns.put("pistol", new GunStats(6, 8, 80, 5, 30, 48, 0.01, 1, false, 1, 0, 2.0));
-		guns.put("smg", new GunStats(4, 32, 192, 2, 40, 40, 0.035, 1, true, 1, 0, 1.5));
-		guns.put("assault_rifle", new GunStats(7, 30, 180, 3, 45, 64, 0.02, 1, true, 1, 0, 2.0));
-		guns.put("lmg", new GunStats(8, 100, 300, 3, 100, 64, 0.04, 1, true, 2, 0, 1.5));
-		guns.put("shotgun", new GunStats(5, 6, 48, 16, 60, 16, 0.12, 8, false, 1, 0, 1.5));
-		guns.put("sniper", new GunStats(40, 5, 40, 30, 60, 128, 0.0, 1, false, 4, 0, 3.0));
-		guns.put("rocket_launcher", new GunStats(40, 3, 15, 20, 70, 96, 0.0, 1, false, 1, 4.0, 1.0));
+		for (GunCatalog.Def def : GunCatalog.all()) {
+			guns.put(def.id(), def.stats().copy());
+		}
 		return guns;
 	}
 
@@ -193,6 +212,18 @@ public class ZombiesConfig {
 		public double explosionRadius;
 		/** Schadensfaktor bei Kopftreffern. */
 		public double headshotMultiplier;
+		/** Schüsse pro Abzug (Feuerstoß); 0 oder 1 = einzeln. */
+		public int burst;
+		/** Ticks zwischen den Schüssen eines Feuerstoßes. */
+		public int burstIntervalTicks;
+		/** Werte nach Pack-a-Punch; 0 = Standardwert × upgradeDamageMultiplier bzw. upgradeAmmoMultiplier. */
+		public double upgradedDamage;
+		public int upgradedMagazine;
+		public int upgradedReserve;
+		/** Explosionsradius nach Pack-a-Punch (0 = wie vorher). */
+		public double upgradedExplosionRadius;
+		/** Sonderwirkung: ray, lightning, thunder, annihilate (leer = keine). */
+		public String special = "";
 
 		public GunStats(double damage, int magazine, int reserve, int fireRateTicks, int reloadTicks, double range,
 				double spread, int pellets, boolean automatic, int penetration, double explosionRadius, double headshotMultiplier) {
@@ -209,12 +240,20 @@ public class ZombiesConfig {
 			this.explosionRadius = explosionRadius;
 			this.headshotMultiplier = headshotMultiplier;
 		}
+
+		public GunStats copy() {
+			return GSON.fromJson(GSON.toJson(this), GunStats.class);
+		}
 	}
 
 	/** Werte einer Waffe; fehlt sie in der Datei, gelten die Standardwerte. */
 	public GunStats gun(String key) {
 		GunStats stats = guns != null ? guns.get(key) : null;
-		return stats != null ? stats : defaultGuns().get(key);
+		if (stats == null) {
+			GunCatalog.Def def = GunCatalog.get(key);
+			stats = def != null ? def.stats() : null;
+		}
+		return stats;
 	}
 
 	// ---------------------------------------------------------------- Fenster
@@ -249,6 +288,13 @@ public class ZombiesConfig {
 			// Runde 2 und 3: zwei Faustschläge, danach langsamer Anstieg.
 			healthEarlyRounds = new ArrayList<>(List.of(1.0, 2.0, 2.0));
 			healthPerRound = 3.0;
+		}
+		if (configVersion < 6) {
+			// Black-Ops-III-Waffen ersetzen die sieben Platzhalterwaffen.
+			boxWeapons = defaultBoxWeapons();
+			if (guns != null) {
+				guns.keySet().removeIf(key -> GunCatalog.get(key) == null);
+			}
 		}
 		// Neue Waffen in älteren Dateien ergänzen (vorhandene Werte bleiben).
 		if (guns == null) {
