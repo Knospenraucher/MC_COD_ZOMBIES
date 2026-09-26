@@ -509,7 +509,7 @@ public class GameManager {
 		if (inventory.getItem(0).isEmpty()) {
 			inventory.setItem(0, stack);
 		} else if (!inventory.add(stack)) {
-			player.drop(stack, false);
+			MCZombies.LOGGER.warn("Kein Platz für die Startwaffe bei {}", player.getName().getString());
 		}
 		inventory.setSelectedSlot(0);
 	}

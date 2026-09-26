@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -48,7 +47,6 @@ public final class KnifeMelee {
 		}
 		NEXT_STAB.put(player.getUUID(), now + COOLDOWN_TICKS);
 
-		player.swing(InteractionHand.MAIN_HAND);
 		Vec3 eye = player.getEyePosition();
 		Vec3 look = player.getLookAngle();
 		level.playSound(null, player.getX(), player.getY(), player.getZ(),

@@ -3,7 +3,6 @@ package de.knospenraucher.mczombies.client;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
@@ -35,7 +34,6 @@ public final class KnifeAnimation {
 		startMs = System.currentTimeMillis();
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player != null) {
-			mc.player.swing(InteractionHand.MAIN_HAND);
 			lunge(mc.player);
 		}
 	}
