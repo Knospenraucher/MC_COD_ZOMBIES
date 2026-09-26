@@ -77,10 +77,9 @@ final class WonderWeapons {
 			if (distance > range || distance < 1.0E-3 || offset.normalize().dot(look) < THUNDER_CONE_COS) {
 				continue;
 			}
-			Vec3 push = offset.normalize().scale(2.5).add(0, 0.6, 0);
-			target.setDeltaMovement(push);
-			target.hurtMarked = true;
 			GunManager.hurt(level, player, target, damage, false);
+			// knockback() stößt entgegen der übergebenen Richtung weg
+			target.knockback(upgraded ? 3.0 : 2.0, -offset.x, -offset.z);
 		}
 		level.playSound(null, eye.x, eye.y, eye.z, SoundEvents.WIND_CHARGE_BURST, SoundSource.PLAYERS, 2.0F, 0.6F);
 	}
