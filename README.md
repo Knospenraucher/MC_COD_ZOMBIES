@@ -9,7 +9,7 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 ## Features (Phase 1)
 
 - **Start mit der Faust:** Beim Spielstart wird das Inventar geleert (und bei Spielende
-  zurückgegeben). In Runde 1 sterben Zombies mit einem Faustschlag, in Runde 2 und 3 mit zwei, danach werden sie stetig stärker.
+  zurückgegeben). Zombies haben ihr Leben aus Black Ops III (Runde 1: 150, dann +100 pro Runde, ab Runde 10 ×1,1); ein Faustschlag macht 150 wie das Messer.
 - **Rundensystem:** Zombies spawnen an festgelegten Spawnpunkten. Anzahl, Leben, Tempo und Schaden
   steigen pro Runde. Zombies tragen einen Helm und verbrennen deshalb tagsüber nicht. Andere
   Mobs (Tiere, Monster) werden während des Spiels entfernt. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
@@ -43,8 +43,8 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 ## Features (Phase 3)
 
 - **Alle Waffen aus Black Ops III Zombies** (40 Stück, Kreativinventar Tab „Kampf“, Item-ID
-  `mczombies:<name>`, z. B. `mczombies:kn_44`). Werte nach dem Original, Schaden durch 45 geteilt,
-  weil unsere Zombies weniger Leben haben. Wo keine Quelle etwas hergab (v. a. Nachladezeiten,
+  `mczombies:<name>`, z. B. `mczombies:kn_44`). Werte nach dem Original, auch der Schaden 1:1, weil
+  die Zombies ihr BO3-Leben haben. Wo keine Quelle etwas hergab (v. a. Nachladezeiten,
   MR6, RPK, XM-53), sind die Werte geschätzt; alles ist in der Config änderbar.
 
   | Klasse | Waffen |
@@ -210,17 +210,18 @@ Die wichtigsten Werte:
 | `zombiesBaseCount` / `zombiesPerRound` | 6 / 3 | Zombies in Runde 1 / zusätzlich pro Runde |
 | `zombiesExtraPlayerFactor` | 0.5 | +50 % Zombies pro weiterem Spieler |
 | `maxAliveZombies` | 24 | Maximal gleichzeitig lebende Zombies |
-| `healthEarlyRounds` / `healthPerRound` | [1, 2, 2] / 3 | Leben in Runde 1–3 (1 = ein Faustschlag) / danach zusätzlich pro Runde |
+| `healthEarlyRounds` / `healthPerRound` | [150] / 100 | Zombie-Leben in BO3-Einheiten: Runde 1 / danach zusätzlich pro Runde |
+| `meleeDamageScale` | 150 | Faust, Schwert, Bogen: Minecraft-Schaden × Faktor (Faust = 150 wie das Messer) |
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
 | `speedBase` / `speedPerRound` / `speedMax` | 0.20 / 0.008 / 0.33 | Laufgeschwindigkeit |
-| `damageBase` / `damagePerRound` / `damageMax` | 2 / 0.25 / 10 | Schaden pro Schlag |
+| `damageBase` / `damagePerRound` / `damageMax` | 6.7 / 0 / 6.7 | Schaden pro Schlag (drei Schläge bis down wie in BO3) |
 | `boxPrice` / `boxMoveChance` | 950 / 0.2 | Preis eines Kisten-Drehs / Umzugschance pro Dreh |
 | `boxWeapons` | Liste | Waffen der Zufallskiste mit Gewichtung |
 | `pointsPerBoardRepair` / `windowRepairPointsCapPerRound` | 10 / 500 | Punkte fürs Reparieren |
 | `windowTearIntervalTicks` | 40 | So oft reißt ein Zombie ein Brett heraus (20 Ticks = 1 s) |
 | `guns` | je Waffe | Schaden, Magazin, Reserve, Feuerrate, Nachladezeit, Reichweite, Streuung, Kugeln, Dauerfeuer, Durchschlag, Explosionsradius, Kopftreffer-Faktor |
 | `upgradePrice` | 5000 | Preis an der Aufrüst-Maschine |
-| `upgradeDamageMultiplier` / `upgradeAmmoMultiplier` | 2.0 / 1.5 | Wirkung der Aufrüstung |
+| `upgradeDamageMultiplier` / `upgradeAmmoMultiplier` | 2.0 / 1.5 | Wirkung der Aufrüstung, nur für Waffen ohne eigene Pack-a-Punch-Werte |
 | `startWithEmptyInventory` | true | Nur mit der Faust starten; Inventar kommt bei Spielende zurück |
 | `adventureModeDuringGame` | true | Spieler können die Map während des Spiels nicht abbauen |
 | `removeOtherMobsDuringGame` | true | Tiere und andere Monster werden während des Spiels entfernt |
