@@ -21,7 +21,9 @@ jobs:
         continue-on-error: true
         run: |
           J=$(find ~/.gradle/caches/fabric-loom -name 'minecraft-client*.jar' | head -1); echo "$J"
-          javap -cp "$J" net.minecraft.client.renderer.ItemInHandRenderer | grep -i render
+          unzip -l "$J" | grep -i -E 'hand|firstperson' | head -40
+          C=$(unzip -l "$J" | grep -o 'net/minecraft/client/renderer/[A-Za-z/]*ItemInHandRenderer.class' | head -1 | sed 's/.class$//; s#/#.#g'); echo "$C"
+          [ -n "$C" ] && javap -cp "$J" "$C" | grep -i render
           javap -cp "$J" net.minecraft.client.player.AbstractClientPlayer | grep -i field
           javap -cp "$J" net.minecraft.client.Minecraft | grep -i delta
           javap -cp "$J" net.minecraft.client.DeltaTracker | grep -i partial

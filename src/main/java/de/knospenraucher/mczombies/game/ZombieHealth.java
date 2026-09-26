@@ -2,6 +2,7 @@ package de.knospenraucher.mczombies.game;
 
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.weapon.GunManager;
+import de.knospenraucher.mczombies.weapon.KnifeMelee;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -70,6 +71,9 @@ public final class ZombieHealth {
 		double damage;
 		if (GunManager.currentShot() != null) {
 			damage = amount;
+		} else if (KnifeMelee.isStabbing()) {
+			// Messer: fester BO3-Schaden, eigene Abklingzeit hat KnifeMelee schon
+			damage = ZombiesConfig.get().knifeDamage;
 		} else {
 			long now = target.level().getGameTime();
 			if (now - pool.lastMeleeTick < MELEE_COOLDOWN_TICKS) {

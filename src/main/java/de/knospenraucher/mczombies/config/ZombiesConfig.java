@@ -95,6 +95,8 @@ public class ZombiesConfig {
 	 * Faust (1) × 150 = 150, so viel wie das Messer in BO3: Runde 1 stirbt mit einem Schlag.
 	 */
 	public double meleeDamageScale = 150.0;
+	/** Schaden eines Messerstichs (Taste V) in BO3-Einheiten. 150 = Runde-1-Zombies sterben mit einem Stich. */
+	public double knifeDamage = 150.0;
 
 	/** Nur noch Rückfallwerte; das Tempo hängt jetzt von der Zombie-Art ab (siehe walkerSpeed/runnerSpeed). */
 	public double speedBase = 0.20;

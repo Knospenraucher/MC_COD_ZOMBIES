@@ -18,9 +18,10 @@ import java.util.UUID;
 /**
  * Messer-Nahkampf auf Taste V, mit jeder Waffe in der Hand (wie in CoD).
  * <p>
- * Trifft den Zombie im Visier (bis {@link #REACH} Blöcke). Läuft der Spieler auf einen Zombie zu,
- * macht der Client einen Ausfallschritt wie in CoD; dann trifft das Messer den nächsten Zombie
- * in einem Kegel bis {@link #LUNGE_REACH} Blöcke. Schaden: Minecraft-Schaden 1 × {@code meleeDamageScale} = 150 wie das BO3-Messer.
+ * Trifft den Zombie im Visier oder den nächsten in einem Kegel davor (bis {@link #REACH} Blöcke).
+ * Läuft der Spieler auf einen Zombie zu, macht der Client einen Ausfallschritt wie in CoD; dann reicht
+ * das Messer bis {@link #LUNGE_REACH} Blöcke. Schaden: {@code knifeDamage} (150 wie das BO3-Messer,
+ * also ein Stich pro Zombie in Runde 1).
  * Kills zählen als Nahkampf-Kills (130 Punkte).
  */
 public final class KnifeMelee {
@@ -28,10 +29,14 @@ public final class KnifeMelee {
 	private static final double LUNGE_REACH = 4.0;
 	/** Kosinus des halben Öffnungswinkels für den Ausfallschritt (etwa 35°). */
 	private static final double LUNGE_CONE_COS = 0.82;
+	/** Ohne Ausfallschritt ist der Kegel breiter (etwa 45°), dafür kürzer. */
+	private static final double CONE_COS = 0.7;
 	/** Ticks zwischen zwei Messerstichen. */
 	public static final int COOLDOWN_TICKS = 14;
 
 	private static final Map<UUID, Long> NEXT_STAB = new HashMap<>();
+	/** Gesetzt, während ein Messerstich Schaden austeilt (ZombieHealth rechnet dann mit knifeDamage). */
+	private static boolean stabbing;
 
 	private KnifeMelee() {
 	}
@@ -62,7 +67,16 @@ public final class KnifeMelee {
 		level.playSound(null, hit.x, hit.y, hit.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.0F, 1.1F);
 		// Keine Vanilla-Unverwundbarkeit nach einem Schuss: sonst ginge der Stich verloren.
 		target.setInvulnerableTime(0);
-		target.hurtServer(level, player.damageSources().playerAttack(player), 1.0F);
+		stabbing = true;
+		try {
+			target.hurtServer(level, player.damageSources().playerAttack(player), 1.0F);
+		} finally {
+			stabbing = false;
+		}
+	}
+
+	public static boolean isStabbing() {
+		return stabbing;
 	}
 
 	private static LivingEntity findTarget(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 look, boolean lunge) {
@@ -71,17 +85,16 @@ public final class KnifeMelee {
 		if (!direct.isEmpty()) {
 			return direct.get(0).target();
 		}
-		if (!lunge) {
-			return null;
-		}
-		AABB area = player.getBoundingBox().inflate(LUNGE_REACH);
+		double reach = lunge ? LUNGE_REACH : REACH;
+		double cone = lunge ? LUNGE_CONE_COS : CONE_COS;
+		AABB area = player.getBoundingBox().inflate(reach);
 		return level.getEntitiesOfClass(LivingEntity.class, area, e -> GunManager.isTarget(e, player))
 				.stream()
 				.filter(e -> {
 					Vec3 offset = e.getBoundingBox().getCenter().subtract(eye);
 					double distance = offset.length();
-					return distance <= LUNGE_REACH + 0.5 && distance > 1.0E-3
-							&& offset.normalize().dot(look) >= LUNGE_CONE_COS
+					return distance <= reach + 0.5 && distance > 1.0E-3
+							&& offset.normalize().dot(look) >= cone
 							&& player.hasLineOfSight(e);
 				})
 				.min(Comparator.comparingDouble(e -> e.distanceToSqr(player)))
