@@ -23,6 +23,11 @@ public final class GunInput {
 	private static boolean attackWasDown;
 	private static int pendingShots;
 	private static boolean aiming;
+	/** Fortschritt ins Visier (0 = Hüfte, 1 = voll im Visier), pro Tick nachgeführt. */
+	private static float aimProgress;
+	private static float prevAimProgress;
+	/** Ticks bis voll im Visier bzw. wieder an der Hüfte. */
+	private static final float AIM_TICKS = 4.0F;
 	private static int nextKnifeTick;
 
 	private GunInput() {
@@ -45,13 +50,26 @@ public final class GunInput {
 		return aiming;
 	}
 
+	/** Geglätteter Visier-Fortschritt (0 bis 1) für das aktuelle Bild, mit weichem Anfang und Ende. */
+	public static float aimProgress(float partialTick) {
+		float t = prevAimProgress + (aimProgress - prevAimProgress) * partialTick;
+		return t * t * (3.0F - 2.0F * t);
+	}
+
+	/** Während des Zielens (auch beim Rein- und Rausgehen) wird die Waffe in der Hand nicht gezeichnet. */
+	public static boolean hideHeldItem() {
+		return aimProgress > 0.0F || prevAimProgress > 0.0F;
+	}
+
 	/** Sichtfeld-Faktor beim Zielen: Zielfernrohre zoomen stark, Kimme und Korn leicht. 1 = kein Zoom. */
 	public static float zoomFactor() {
 		Minecraft mc = Minecraft.getInstance();
-		if (!aiming || mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof GunItem gun)) {
+		if (mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof GunItem gun)) {
 			return 1.0F;
 		}
-		return "sniper".equals(gun.category()) ? 0.35F : 0.75F;
+		float progress = aimProgress(mc.getDeltaTracker().getGameTimeDeltaPartialTick(false));
+		float full = "sniper".equals(gun.category()) ? 0.35F : 0.75F;
+		return 1.0F - (1.0F - full) * progress;
 	}
 
 	private static void setAiming(boolean value) {
@@ -77,6 +95,7 @@ public final class GunInput {
 		if (mc.player == null) {
 			attackWasDown = false;
 			setAiming(false);
+			aimProgress = prevAimProgress = 0.0F;
 			pendingShots = 0;
 			return;
 		}
@@ -111,5 +130,13 @@ public final class GunInput {
 
 		// Rechtsklick halten: über Kimme und Korn zielen.
 		setAiming(holdingGun && mc.options.keyUse.isDown());
+		prevAimProgress = aimProgress;
+		if (!holdingGun) {
+			aimProgress = prevAimProgress = 0.0F;
+		} else if (aiming) {
+			aimProgress = Math.min(1.0F, aimProgress + 1.0F / AIM_TICKS);
+		} else {
+			aimProgress = Math.max(0.0F, aimProgress - 1.0F / AIM_TICKS);
+		}
 	}
 }

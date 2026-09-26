@@ -3,7 +3,8 @@
 	"package": "de.knospenraucher.mczombies.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"AbstractClientPlayerMixin"
+		"AbstractClientPlayerMixin",
+		"ItemInHandRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

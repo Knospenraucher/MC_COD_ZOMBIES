@@ -17,6 +17,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build
         run: ./gradlew build
+      - name: Signaturen pruefen (temporaer)
+        continue-on-error: true
+        run: |
+          J=$(find ~/.gradle/caches/fabric-loom -name 'minecraft-client*.jar' | head -1); echo "$J"
+          javap -cp "$J" net.minecraft.client.renderer.ItemInHandRenderer | grep -i render
+          javap -cp "$J" net.minecraft.client.player.AbstractClientPlayer | grep -i field
+          javap -cp "$J" net.minecraft.client.Minecraft | grep -i delta
+          javap -cp "$J" net.minecraft.client.DeltaTracker | grep -i partial
       - name: Mod-Jar hochladen
         uses: actions/upload-artifact@v4
         with:

@@ -19,14 +19,25 @@ public final class AimOverlay {
 
 	public static void render(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
 		Minecraft mc = Minecraft.getInstance();
-		if (!GunInput.isAiming() || mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof GunItem gun)) {
+		if (mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof GunItem gun)) {
 			return;
 		}
-		int cx = g.guiWidth() / 2;
-		int cy = g.guiHeight() / 2;
+		float progress = GunInput.aimProgress(deltaTracker.getGameTimeDeltaPartialTick(false));
+		if (progress <= 0.0F) {
+			return;
+		}
 		if ("sniper".equals(gun.category())) {
-			scope(g, cx, cy);
-		} else if (gun.key().endsWith("mr6")) {
+			// Zielfernrohr erst, wenn die Waffe fast oben ist
+			if (progress > 0.85F) {
+				scope(g, g.guiWidth() / 2, g.guiHeight() / 2);
+			}
+			return;
+		}
+		// Rein ins Visier: die Waffe kommt von unten rechts (Hüfte) in die Bildmitte, raus umgekehrt.
+		float away = 1.0F - progress;
+		int cx = g.guiWidth() / 2 + Math.round(away * g.guiWidth() * 0.22F);
+		int cy = g.guiHeight() / 2 + Math.round(away * g.guiHeight() * 0.6F);
+		if (gun.key().endsWith("mr6")) {
 			mr6(g, cx, cy);
 		} else {
 			ironSights(g, cx, cy);
@@ -47,25 +58,16 @@ public final class AimOverlay {
 
 	/**
 	 * MR6 über Kimme und Korn wie in BO3: kantiges Schlittenende mit Kimme, gelbem Korn und grüner
-	 * Munitionsanzeige, darunter Handschuh und Ärmel. Die Einheit u wächst mit der Bildschirmhöhe.
+	 * Munitionsanzeige, darunter Griffstück und Griff bis zum Bildrand. Die Einheit u wächst mit der
+	 * Bildschirmhöhe.
 	 */
 	private static void mr6(GuiGraphicsExtractor g, int cx, int cy) {
-		int w = g.guiWidth();
-		int h = g.guiHeight();
-		float u = h / 100.0F;
+		float u = g.guiHeight() / 100.0F;
+		float bottom = cy + 90 * u;
 		int body = 0xFF2A2A2E;
 		int edge = 0xFF48484E;
 		int shadow = 0xFF18181A;
-		int glove = 0xFFB08A4A;
-		int gloveDark = 0xFF7C6034;
-		int sleeve = 0xFF4A4C52;
-		int orange = 0xFFE0662A;
-
-		// Ärmel rechts und Unterarm links (hinter der Waffe)
-		quad(g, cx + 14 * u, cx + 34 * u, cy + 40 * u, cx + 22 * u, w, h, sleeve);
-		quad(g, cx + 26 * u, cx + 28 * u, cy + 42 * u, cx + 44 * u, cx + 47 * u, h, orange);
-		quad(g, cx + 32 * u, cx + 34 * u, cy + 41 * u, cx + 56 * u, cx + 59 * u, h, orange);
-		quad(g, cx - 30 * u, cx - 12 * u, cy + 44 * u, 0, cx - 6 * u, h, gloveDark);
+		int grip = 0xFF232326;
 
 		// Korn: dunkler Pfosten mit gelbem Strich, sitzt in der Lücke der Kimme
 		rect(g, cx - u, cy - u, cx + u, cy + 5 * u, shadow);
@@ -91,13 +93,12 @@ public final class AimOverlay {
 		// Griffstück, etwas breiter
 		rect(g, cx - 12 * u, cy + 30 * u, cx + 11 * u, cy + 40 * u, 0xFF36363B);
 		rect(g, cx - 12 * u, cy + 30 * u, cx + 11 * u, cy + 31 * u, edge);
+		rect(g, cx - 12 * u, cy + 39 * u, cx + 11 * u, cy + 40 * u, shadow);
 
-		// Handschuh um den Griff, mit Nähten und Knöchelschutz
-		quad(g, cx - 16 * u, cx + 14 * u, cy + 38 * u, cx - 40 * u, cx + 22 * u, h, glove);
-		quad(g, cx - 4 * u, cx - 3 * u, cy + 38 * u, cx - 10 * u, cx - 9 * u, h, gloveDark);
-		quad(g, cx + 6 * u, cx + 7 * u, cy + 38 * u, cx + 8 * u, cx + 9 * u, h, gloveDark);
-		for (float[] knuckle : new float[][] {{-13, 42}, {-1, 41}, {10, 43}, {-22, 47}}) {
-			rect(g, cx + knuckle[0] * u, cy + knuckle[1] * u, cx + (knuckle[0] + 4) * u, cy + (knuckle[1] + 3) * u, 0xFF3C3C40);
+		// Griff mit geriffelter Rückseite, läuft nach unten aus dem Bild
+		quad(g, cx - 8 * u, cx + 8 * u, cy + 40 * u, cx - 9 * u, cx + 9 * u, bottom, grip);
+		for (float y = cy + 43 * u; y < bottom; y += 2.5F * u) {
+			rect(g, cx - 5 * u, y, cx + 5 * u, y + u, shadow);
 		}
 	}
 
