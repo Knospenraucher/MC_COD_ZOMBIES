@@ -10,24 +10,25 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Nachbau der Black-Ops-III-Map „The Giant“ aus Minecraft-Blöcken.
- * Aufbau und Preise nach der Beschreibung im Call-of-Duty-Wiki, Maße frei geschätzt:
+ * Grundriss nach dem Bauplan vom Ladebildschirm, Aussehen nach Screenshots, Maße geschätzt:
  * <pre>
- *                     [ Teleporter C ]  (Tür 1250, Laufsteg mit Kiste)
- *                            |
- * [ Teleporter A ]   [    Innenhof    ]   [ Teleporter B ] (oben, über Treppe)
- *   (Tür 1250)       (tiefer, Generator)
- *        |          ==== Brücke (oben) ====        |
- * [ Tierversuchslabor ] ------------- [ Autowerkstatt ]
- *   (2 Türen à 750)   [ Startbereich ]   (Tür 750)
- *                     (Hauptrechner = Aufrüst-Maschine)
+ *                  [ Teleporter B ]            (Kran, Schornsteine)
+ *                  [  Ofenraum    ][ Werkstatt/Hangar ]
+ *                  [ Generatoren (oben) ][ Obergeschoss ]
+ * [Tele C][ Hof links ]|[ Innenhof  ~Brücke~ ]|[ Start: Hauptrechner ]
+ *                      [ Tierversuche ][ Labor ]
+ *                                     [ Teleporter A ]
  * </pre>
- * Norden ist -Z. Der Spieler, der den Befehl ausführt, steht danach im Startbereich.
- * Zombies kommen durch vernagelte Fenster (aus Käfigen) oder steigen im Innenhof und in
- * den Teleporterräumen aus dem Boden.
+ * Norden ist -Z. Der Spieler, der den Befehl ausführt, steht danach im Start vor dem Hauptrechner.
+ * Zombies kommen durch vernagelte Fenster (aus Käfigen hinter der Wand) oder steigen in den
+ * Höfen und Teleporterräumen aus dem Boden.
  */
 public final class RieseMap {
-	/** Abstand des Spieler-Startpunkts vom Nullpunkt der Map (nach Süden). */
-	private static final int START_Z = 24;
+	/** Abstand des Spieler-Startpunkts vom Nullpunkt der Map (nach Osten). */
+	private static final int START_X = 8;
+
+	/** Bodenblock der offenen Flächen; nur darauf fällt Schnee. */
+	private static final Block OUTDOOR_FLOOR = Blocks.POLISHED_ANDESITE;
 
 	private final ServerLevel level;
 	private final MapData map;
@@ -38,9 +39,9 @@ public final class RieseMap {
 	private RieseMap(ServerLevel level, MapData map, BlockPos feet) {
 		this.level = level;
 		this.map = map;
-		this.ox = feet.getX();
+		this.ox = feet.getX() - START_X;
 		this.oy = feet.getY() - 1;
-		this.oz = feet.getZ() - START_Z;
+		this.oz = feet.getZ();
 	}
 
 	/** Baut die Map um die Füße des Spielers und trägt alle Map-Elemente ein. */
@@ -52,101 +53,206 @@ public final class RieseMap {
 		map.clearAll();
 
 		// Platz schaffen, Boden legen.
-		fill(-50, 1, -76, 50, 16, 34, Blocks.AIR);
-		fill(-50, 0, -76, 50, 0, 34, Blocks.POLISHED_ANDESITE);
+		fill(-88, 1, -66, 42, 30, 50, Blocks.AIR);
+		fill(-88, 0, -66, 42, 0, 50, OUTDOOR_FLOOR);
 
-		// ---- Rohbau: zuerst die hohen Gebäude, dann die tieferen Bereiche, zuletzt der Start.
-		room(-44, -14, -14, 24, 0, 11, Blocks.STONE_BRICKS, Blocks.SMOOTH_STONE, true);  // Tierversuchslabor
-		room(14, -14, 44, 24, 0, 11, Blocks.BRICKS, Blocks.POLISHED_ANDESITE, true);     // Autowerkstatt
-		room(-44, -40, -14, -14, 0, 7, Blocks.STONE_BRICKS, Blocks.SMOOTH_STONE, true);  // Teleporter A
-		teleporterBRoom();
-		lowerArea(-14, -40, 14, 10, 10, false, Blocks.STONE_BRICKS, Blocks.MOSSY_STONE_BRICKS);  // Innenhof
-		lowerArea(-14, -70, 14, -40, 8, true, Blocks.DEEPSLATE_TILES, Blocks.POLISHED_ANDESITE); // Teleporter C
-		startArea();
+		// ---- Rohbau: erst die niedrigen Hofmauern, dann die Gebäude (gemeinsame Wände werden überschrieben).
+		walls(-40, -12, 0, 12, 1, 5, Blocks.BRICKS);                                            // Innenhof
+		walls(-80, -12, -40, 12, 1, 5, Blocks.BRICKS);                                          // Hof links
+		room(-40, -40, -10, -12, 4, Blocks.BRICKS, Blocks.STONE_BRICKS, true);                  // Ofenraum
+		room(-10, -40, 20, -12, 10, Blocks.BRICKS, Blocks.SMOOTH_STONE, true);                  // Werkstatt
+		glassRoom(-40, -56, -10, -40, 8);                                                       // Teleporter B
+		room(-40, 12, 0, 30, 6, Blocks.BRICKS, Blocks.SMOOTH_STONE, true);                      // Tierversuche
+		room(0, 12, 32, 30, 6, Blocks.BRICKS, Blocks.SMOOTH_STONE, true);                       // Labor
+		glassRoom(0, 30, 32, 46, 8);                                                            // Teleporter A
+		glassRoom(-80, -10, -62, 10, 7);                                                        // Teleporter C
+		walls(0, -12, 32, 12, 1, 6, Blocks.BRICKS);                                             // Start
 
 		// ---- Einrichtung und Map-Elemente
-		startDetails();
+		startArea();
 		labDetails();
-		garageDetails();
+		animalTestingDetails();
 		teleporterADetails();
+		garageDetails();
+		furnaceDetails();
+		generatorDetails();
 		teleporterBDetails();
 		courtyardDetails();
-		teleporterCDetails();
 		bridge();
+		leftCourtyardDetails();
+		teleporterCDetails();
+		skyline();
 
-		map.setPlayerSpawn(pos(0, 1, START_Z));
+		// ---- Schnee auf offenen Flächen und Dächern
+		snow(1, -11, 31, 11, 1, OUTDOOR_FLOOR);        // Start
+		snow(-39, -11, -1, 11, 1, OUTDOOR_FLOOR);      // Innenhof
+		snow(-61, -11, -41, 11, 1, OUTDOOR_FLOOR);     // Hof links
+		snow(-39, -22, -11, -13, 6, Blocks.BRICKS);    // Generatoren
+		snow(-40, -40, -10, -23, 6, Blocks.BRICKS);    // Ofenraum-Dach
+		snow(-10, -40, 20, -12, 12, Blocks.BRICKS);    // Werkstatt-Dach
+		snow(-40, 12, 32, 30, 8, Blocks.BRICKS);       // Labor- und Tierversuchs-Dach
+
+		map.setPlayerSpawn(pos(START_X, 1, 0));
 	}
 
-	// ================================================================ Startbereich
+	// ================================================================ Start: Hof vor dem Hauptrechner
 
-	/** Platz vor der Fabrik, oben offen. In der Mitte der Hauptrechner. */
 	private void startArea() {
-		fill(-14, 0, 10, 14, 0, 28, Blocks.STONE_BRICKS);
-		walls(-14, 10, 14, 28, 1, 6, Blocks.STONE_BRICKS);
-		// Hauptrechner: Plattform mit vier Rechner-Säulen
-		fill(-2, 0, 14, 2, 0, 18, Blocks.IRON_BLOCK);
-		for (int[] c : new int[][] {{-3, 13}, {3, 13}, {-3, 19}, {3, 19}}) {
-			fill(c[0], 1, c[1], c[0], 4, c[1], Blocks.OBSERVER);
-			set(c[0], 5, c[1], Blocks.REDSTONE_BLOCK);
+		mainframe(25, 0);
+		roundPad(12, 0, 0);
+
+		// „Waffenfabrik der Riese“: Tafel über einem Balkon, Treppe von Osten
+		fill(2, 4, -11, 13, 4, -9, Blocks.SPRUCE_PLANKS);
+		fill(2, 5, -9, 13, 5, -9, Blocks.OAK_FENCE);
+		stairs(17, -11, -1, 0, 3, 4, Blocks.STONE_BRICKS);
+		fill(5, 7, -12, 10, 9, -12, Blocks.GILDED_BLACKSTONE);
+		set(2, 5, -11, Blocks.LANTERN);
+		set(11, 5, -11, Blocks.LANTERN);
+		// Rot glühende Gitterfenster
+		fill(12, 7, -12, 19, 8, -12, Blocks.SHROOMLIGHT);
+		fill(18, 4, 12, 30, 5, 12, Blocks.SHROOMLIGHT);
+
+		door("Labor", 6, 1, 12, 8, 3, 12, 750, "labor,hof");
+		door("Werkstatt", 20, 1, -12, 22, 3, -12, 750, "garage,hof");
+
+		wallWeapon(0, 2, -6, "mczombies:assault_rifle", 500, 250);
+		wallWeapon(26, 2, 12, "mczombies:pistol", 500, 250);
+
+		window(32, 1, -10, 32, 2, -9, 1, 0, null);
+		window(32, 1, 9, 32, 2, 10, 1, 0, null);
+
+		lampPost(2, 10);
+		lampPost(30, -10);
+	}
+
+	/**
+	 * Hauptrechner: Turm auf einer erhöhten Plattform mit Stufen, oben Glaskuppel und Leuchtfeuer
+	 * (der Strahl in den Himmel). Unten im Turm steckt die Aufrüst-Maschine.
+	 */
+	private void mainframe(int cx, int cz) {
+		// Plattform (Oberkante y = 2) mit Stufen aus Halbstufen von Westen
+		fill(cx - 5, 1, cz - 6, cx + 5, 2, cz + 6, Blocks.STONE_BRICKS);
+		fill(cx - 5, 2, cz - 6, cx + 5, 2, cz + 6, Blocks.SMOOTH_STONE);
+		fill(cx - 8, 1, cz - 2, cx - 8, 1, cz + 2, Blocks.SMOOTH_STONE_SLAB);
+		fill(cx - 7, 1, cz - 2, cx - 6, 1, cz + 2, Blocks.STONE_BRICKS);
+		fill(cx - 6, 2, cz - 2, cx - 6, 2, cz + 2, Blocks.SMOOTH_STONE_SLAB);
+		// Geländer
+		fill(cx - 5, 3, cz - 6, cx + 5, 3, cz - 6, Blocks.IRON_BARS);
+		fill(cx - 5, 3, cz + 6, cx + 5, 3, cz + 6, Blocks.IRON_BARS);
+		fill(cx + 5, 3, cz - 6, cx + 5, 3, cz + 6, Blocks.IRON_BARS);
+		fill(cx - 5, 3, cz - 6, cx - 5, 3, cz - 3, Blocks.IRON_BARS);
+		fill(cx - 5, 3, cz + 3, cx - 5, 3, cz + 6, Blocks.IRON_BARS);
+
+		// Gerippter Turm, innen eine Leuchtsäule
+		for (int y = 3; y <= 14; y++) {
+			Block ring = y % 3 == 0 ? Blocks.IRON_BLOCK : Blocks.POLISHED_DEEPSLATE;
+			for (int dx = -3; dx <= 3; dx++) {
+				for (int dz = -3; dz <= 3; dz++) {
+					int d2 = dx * dx + dz * dz;
+					if (d2 >= 5 && d2 <= 10) {
+						set(cx + dx, y, cz + dz, ring);
+					}
+				}
+			}
+			set(cx, y, cz, Blocks.SEA_LANTERN);
 		}
-		set(0, 0, 16, Blocks.SEA_LANTERN);
-		lights(-12, 11, 12, 27, 0);
+		// Kuppel, Leuchtfeuer und Kugeln an Auslegern
+		for (int dx = -3; dx <= 3; dx++) {
+			for (int dz = -3; dz <= 3; dz++) {
+				if (dx * dx + dz * dz <= 10) {
+					set(cx + dx, 15, cz + dz, Blocks.GLASS);
+				}
+			}
+		}
+		fill(cx - 1, 16, cz - 1, cx + 1, 16, cz + 1, Blocks.IRON_BLOCK);
+		set(cx, 17, cz, Blocks.BEACON);
+		for (int[] c : new int[][] {{-4, 0}, {4, 0}, {0, -4}, {0, 4}}) {
+			set(cx + c[0], 13, cz + c[1], Blocks.END_ROD);
+		}
+
+		// Aufrüst-Maschine im runden Fenster unten am Turm, darüber ein Glasfenster
+		set(cx - 3, 3, cz, Blocks.ANVIL);
+		set(cx - 3, 4, cz, Blocks.GLASS);
+		map.addUpgradeMachine(pos(cx - 3, 3, cz));
 	}
 
-	private void startDetails() {
-		door("Labor1", -14, 1, 13, -14, 3, 15, 750, "labor,hof");
-		door("Labor2", -14, 1, 20, -14, 3, 22, 750, "labor,hof");
-		door("Werkstatt", 14, 1, 16, 14, 3, 18, 750, "garage,hof");
-
-		// Aufrüst-Maschine auf dem Hauptrechner
-		set(0, 1, 16, Blocks.ANVIL);
-		map.addUpgradeMachine(pos(0, 1, 16));
-
-		wallWeapon(4, 2, 10, "mczombies:assault_rifle", 500, 250);   // rechts vom Hauptrechner
-		wallWeapon(14, 2, 25, "mczombies:pistol", 500, 250);
-
-		window(-8, 1, 28, -7, 2, 28, 0, 1, null, 0);
-		window(7, 1, 28, 8, 2, 28, 0, 1, null, 0);
-	}
-
-	// ================================================================ Tierversuchslabor (links)
+	// ================================================================ Labor (Süden)
 
 	private void labDetails() {
-		// Obergeschoss zur Brücke mit Treppe
-		mezzanine(-43, -15, -13, -2);
-		stairs(-42, -40, 3, -1);
-		// Käfige für die Versuchstiere
-		for (int z = 2; z <= 18; z += 4) {
-			fill(-24, 1, z, -20, 3, z, Blocks.IRON_BARS);
-			fill(-24, 1, z + 1, -24, 3, z + 2, Blocks.IRON_BARS);
-		}
-		wallWeapon(-44, 2, 8, "mczombies:smg", 1250, 625);           // Mitte, linke Seite
-		wallWeapon(-18, 2, 24, "mczombies:pistol", 750, 375);        // rechts nach der ersten Tür
-		box(-40, 1, -10);
-		window(-44, 1, 0, -44, 2, 1, -1, 0, "labor", 0);
-		window(-44, 1, 16, -44, 2, 17, -1, 0, "labor", 0);
-		lights(-42, -12, -16, 22, 11);
+		// Tafel, Tisch mit Präparategläsern, Pinnwand
+		fill(4, 2, 29, 9, 3, 29, Blocks.POLISHED_BLACKSTONE);
+		fill(4, 1, 25, 9, 1, 26, Blocks.SMOOTH_STONE_SLAB);
+		set(5, 2, 25, Blocks.GLASS);
+		set(8, 2, 25, Blocks.GLASS);
+		fill(20, 2, 29, 22, 3, 29, Blocks.SPRUCE_PLANKS);
+		// Offener Durchgang zu den Tierversuchen
+		fill(0, 1, 16, 0, 3, 24, Blocks.AIR);
+
+		wallWeapon(32, 2, 18, "mczombies:smg", 1250, 625);
+		wallWeapon(24, 2, 30, "mczombies:pistol", 750, 375);
+		box(28, 1, 26);
+		window(32, 1, 24, 32, 2, 25, 1, 0, "labor");
+		door("TeleporterA", 14, 1, 30, 16, 3, 30, 1250, "teleporter_a");
+		lights(2, 14, 30, 28, 6);
 	}
 
-	// ================================================================ Autowerkstatt (rechts)
+	// ================================================================ Tierversuche (unten Mitte)
+
+	private void animalTestingDetails() {
+		// Käfigzellen an der Südwand
+		for (int x = -38; x <= -20; x += 6) {
+			fill(x, 1, 26, x + 3, 3, 26, Blocks.IRON_BARS);
+			fill(x, 1, 27, x, 3, 29, Blocks.IRON_BARS);
+			fill(x + 3, 1, 27, x + 3, 3, 29, Blocks.IRON_BARS);
+			set(x + 1, 1, 28, Blocks.HAY_BLOCK);
+		}
+		// Waschbecken, Fässer, Maschendraht-Absperrung
+		set(-4, 1, 13, Blocks.CAULDRON);
+		set(-12, 1, 13, Blocks.BARREL);
+		set(-11, 1, 13, Blocks.BARREL);
+		fill(-14, 1, 18, -14, 3, 22, Blocks.IRON_BARS);
+		// Durchgang in den Innenhof
+		fill(-20, 1, 12, -16, 3, 12, Blocks.AIR);
+
+		window(-40, 1, 20, -40, 2, 21, -1, 0, "labor");
+		window(-8, 1, 30, -7, 2, 30, 0, 1, "labor");
+		map.addZombieSpawn(pos(-30, 1, 18), "labor");
+		lights(-38, 14, -2, 28, 6);
+	}
+
+	// ================================================================ Teleporter A (hinter dem Labor)
+
+	private void teleporterADetails() {
+		teleporterRoom(16, 40, 6, 26);
+		wallWeapon(32, 2, 38, "mczombies:assault_rifle", 1500, 750);
+		box(28, 1, 44);
+		window(0, 1, 41, 0, 2, 42, -1, 0, "teleporter_a");
+		map.addZombieSpawn(pos(16, 1, 34), "teleporter_a");
+		lights(2, 32, 30, 44, 8);
+	}
+
+	// ================================================================ Werkstatt / Hangar (Norden)
 
 	private void garageDetails() {
-		mezzanine(15, 43, -13, -2);
-		stairs(40, 42, 3, -1);
-		// Schmelzofen hinten in der Werkstatt
-		for (int z = 6; z <= 14; z += 2) {
-			set(43, 1, z, Blocks.BLAST_FURNACE);
-		}
-		fill(42, 1, 5, 43, 4, 5, Blocks.BRICKS);
-		fill(42, 1, 15, 43, 4, 15, Blocks.BRICKS);
-		// Autos (Platzhalter)
-		car(22, 8);
-		car(30, 16);
-		wallWeapon(18, 2, 24, "mczombies:shotgun", 750, 375);        // links beim Reinkommen
-		wallWeapon(44, 2, 12, "mczombies:smg", 1300, 650);           // vor dem Ofen
-		box(40, 1, 20);
-		window(44, 1, 0, 44, 2, 1, 1, 0, "garage", 0);
-		lights(16, -12, 42, 22, 11);
+		car(0, -36);
+		car(8, -24);
+		// Obergeschoss an der Westseite mit Treppe, von dort zu den Generatoren
+		fill(-9, 5, -25, -2, 5, -13, Blocks.SPRUCE_PLANKS);
+		fill(-1, 6, -25, -1, 6, -13, Blocks.OAK_FENCE);
+		fill(-6, 6, -26, -2, 6, -26, Blocks.OAK_FENCE);
+		stairs(-9, -30, 0, 1, 3, 5, Blocks.STONE_BRICKS);
+		fill(-10, 6, -20, -10, 8, -16, Blocks.AIR);
+		// Durchgänge in den Innenhof und in den Ofenraum
+		fill(-8, 1, -12, -4, 3, -12, Blocks.AIR);
+		fill(-10, 1, -38, -10, 3, -35, Blocks.AIR);
+		// Rot glühende Fenster an der Außenseite
+		fill(20, 6, -30, 20, 8, -20, Blocks.SHROOMLIGHT);
+
+		wallWeapon(20, 2, -28, "mczombies:shotgun", 750, 375);
+		wallWeapon(20, 2, -18, "mczombies:smg", 1300, 650);
+		box(16, 1, -36);
+		window(20, 1, -34, 20, 2, -33, 1, 0, "garage");
+		lights(-8, -38, 18, -14, 10);
 	}
 
 	private void car(int x, int z) {
@@ -156,97 +262,178 @@ public final class RieseMap {
 		set(x + 4, 0, z + 2, Blocks.COAL_BLOCK);
 	}
 
-	// ================================================================ Teleporter A (hinter dem Labor)
+	// ================================================================ Ofenraum (1. Stock, unter Teleporter B)
 
-	private void teleporterADetails() {
-		door("TeleporterA", -30, 1, -14, -28, 3, -14, 1250, "teleporter_a");
-		teleporterPad(-29, 0, -27);
-		wallWeapon(-34, 2, -40, "mczombies:assault_rifle", 1500, 750); // links vom Teleporter
-		box(-40, 1, -36);
-		window(-44, 1, -28, -44, 2, -27, -1, 0, "teleporter_a", 0);
-		lights(-42, -38, -16, -16, 7);
+	private void furnaceDetails() {
+		for (int x = -38; x <= -12; x += 2) {
+			set(x, 1, -39, Blocks.BLAST_FURNACE);
+		}
+		// Gotische Bögen: Säulenreihe quer durch den Raum
+		for (int x = -38; x <= -14; x += 4) {
+			fill(x, 1, -24, x, 4, -24, Blocks.STONE_BRICKS);
+		}
+		// Glutrotes Licht aus der Decke
+		for (int x = -37; x <= -13; x += 6) {
+			for (int z = -38; z <= -14; z += 6) {
+				set(x, 5, z, Blocks.SHROOMLIGHT);
+			}
+		}
+		door("TeleporterB", -26, 1, -40, -24, 3, -40, 1250, "teleporter_b");
+		window(-40, 1, -34, -40, 2, -33, -1, 0, "garage");
+		map.addZombieSpawn(pos(-30, 1, -30), "garage");
 	}
 
-	// ================================================================ Teleporter B (oben in der Werkstatt)
+	// ================================================================ Generatoren (2. Stock, auf dem Ofenraum)
 
-	private void teleporterBRoom() {
-		room(14, -40, 44, -14, 5, 11, Blocks.BRICKS, Blocks.POLISHED_ANDESITE, true);
-		fill(14, 1, -40, 44, 4, -14, Blocks.STONE);
+	private void generatorDetails() {
+		// Offenes Stahldach
+		for (int x = -39; x <= -11; x += 14) {
+			fill(x, 6, -22, x, 9, -22, Blocks.IRON_BARS);
+			fill(x, 6, -13, x, 9, -13, Blocks.IRON_BARS);
+		}
+		for (int z = -22; z <= -13; z += 3) {
+			fill(-39, 10, z, -11, 10, z, Blocks.IRON_BARS);
+		}
+		// Großer Motor und Stromkasten (Strom kommt in Phase 4)
+		fill(-32, 6, -19, -28, 8, -16, Blocks.IRON_BLOCK);
+		set(-32, 8, -19, Blocks.AIR);
+		set(-32, 8, -16, Blocks.AIR);
+		fill(-14, 6, -21, -14, 7, -21, Blocks.IRON_BLOCK);
+		set(-14, 8, -21, Blocks.REDSTONE_LAMP);
+		// Geländer (Lücke Richtung Brücke)
+		fill(-40, 6, -23, -11, 6, -23, Blocks.IRON_BARS);
+		fill(-40, 6, -22, -40, 6, -13, Blocks.IRON_BARS);
+		fill(-40, 6, -12, -25, 6, -12, Blocks.IRON_BARS);
+		fill(-21, 6, -12, -11, 6, -12, Blocks.IRON_BARS);
 	}
+
+	// ================================================================ Teleporter B (ganz im Norden)
 
 	private void teleporterBDetails() {
-		// Durchgang vom Obergeschoss der Werkstatt
-		fill(28, 6, -14, 30, 8, -14, Blocks.AIR);
-		teleporterPad(30, 5, -27);
-		map.addZombieSpawn(pos(38, 6, -34), "garage");
-		map.addZombieSpawn(pos(20, 6, -34), "garage");
-		lights(16, -38, 42, -16, 11);
+		teleporterRoom(-25, -48, -34, -16);
+		wallWeapon(-10, 2, -48, "mczombies:lmg", 1500, 750);
+		box(-14, 1, -53);
+		window(-26, 1, -56, -25, 2, -56, 0, -1, "teleporter_b");
+		map.addZombieSpawn(pos(-34, 1, -44), "teleporter_b");
+		lights(-38, -54, -12, -42, 8);
 	}
 
-	// ================================================================ Innenhof (Mitte, tiefer gelegen)
+	// ================================================================ Innenhof (Mitte, unter der Brücke)
 
 	private void courtyardDetails() {
-		// Von Labor und Werkstatt neben der Brücke herunterspringen; eine Stufe führt zurück.
-		fill(-14, 1, -12, -14, 3, -10, Blocks.AIR);
-		fill(-13, -1, -12, -13, -1, -10, Blocks.STONE_BRICKS);
-		fill(14, 1, -12, 14, 3, -10, Blocks.AIR);
-		fill(13, -1, -12, 13, -1, -10, Blocks.STONE_BRICKS);
-
-		// Generator mit dem Stromschalter hinten im Hof (Strom kommt in Phase 4)
-		fill(-10, -1, -38, -6, 1, -36, Blocks.IRON_BLOCK);
-		set(-8, 2, -37, Blocks.REDSTONE_BLOCK);
-		set(-8, 0, -35, Blocks.REDSTONE_LAMP);
-
-		wallWeapon(14, 0, -24, "mczombies:smg", 1250, 625);          // Außengang, rechter Eingang
-		box(-10, -1, -30);
-		map.addZombieSpawn(pos(-8, -1, -20), "hof");
-		map.addZombieSpawn(pos(8, -1, -30), "hof");
+		wallWeapon(-34, 2, -12, "mczombies:smg", 1250, 625);
+		box(-36, 1, 8);
+		set(-38, 1, -10, Blocks.CAMPFIRE);   // Feuertonne
+		set(-2, 1, 10, Blocks.CAMPFIRE);
+		powerPole(-12, 0);
+		lampPost(-30, 10);
+		map.addZombieSpawn(pos(-30, 1, -2), "hof");
+		map.addZombieSpawn(pos(-8, 1, 4), "hof");
 	}
 
-	// ================================================================ Teleporter C (hinter dem Innenhof)
-
-	private void teleporterCDetails() {
-		door("TeleporterC", -1, -1, -40, 1, 1, -40, 1250, "teleporter_c");
-		teleporterPad(0, -2, -58);
-		// Laufsteg mit Kiste an der Ostseite
-		fill(9, -1, -69, 13, 0, -60, Blocks.IRON_BLOCK);
-		set(11, -1, -59, Blocks.IRON_BLOCK);
-		fill(9, 1, -69, 9, 1, -61, Blocks.IRON_BARS);
-		box(11, 1, -66);
-		wallWeapon(-14, 0, -64, "mczombies:assault_rifle", 1400, 700); // Ecke links vom Teleporter
-		window(-1, -1, -70, 0, 0, -70, 0, -1, "teleporter_c", -2);
-		map.addZombieSpawn(pos(-8, -1, -50), "teleporter_c");
-		lights(-12, -68, 12, -42, 8);
-	}
-
-	// ================================================================ Brücke (oben zwischen Labor und Werkstatt)
+	// ================================================================ Brücke (von den Generatoren über den Innenhof)
 
 	private void bridge() {
-		// Durchgänge in den Hofwänden auf Höhe der Obergeschosse
-		fill(-14, 6, -8, -14, 8, -6, Blocks.AIR);
-		fill(14, 6, -8, 14, 8, -6, Blocks.AIR);
-		fill(-13, 5, -8, 13, 5, -6, Blocks.SPRUCE_PLANKS);
-		fill(-13, 6, -9, 13, 6, -9, Blocks.IRON_BARS);
-		fill(-13, 6, -5, 13, 6, -5, Blocks.IRON_BARS);
+		fill(-24, 5, -11, -22, 5, 4, Blocks.IRON_BLOCK);
+		fill(-25, 6, -11, -25, 6, 4, Blocks.IRON_BARS);
+		fill(-21, 6, -11, -21, 6, 4, Blocks.IRON_BARS);
+		stairs(-24, 9, 0, -1, 3, 5, Blocks.STONE_BRICKS);
+		// Elektro-Spitzen unter der Brücke (die Falle kommt in Phase 4)
+		for (int z = -9; z <= 3; z += 4) {
+			set(-23, 4, z, Blocks.END_ROD);
+		}
 		// Im Original öffnet der Strom die Brücke; bis Phase 4 ist sie eine kaufbare Sperre.
-		door("Bruecke", 0, 6, -8, 0, 7, -6, 1000, null);
+		door("Bruecke", -24, 6, -12, -22, 7, -12, 1000, null);
+	}
+
+	// ================================================================ Hof links und Teleporter C (Westen)
+
+	private void leftCourtyardDetails() {
+		door("TeleporterC", -40, 1, -1, -40, 3, 1, 1250, "teleporter_c");
+		wallWeapon(-45, 2, -12, "mczombies:assault_rifle", 1400, 700);
+		box(-50, 1, -8);
+		set(-44, 1, 10, Blocks.CAMPFIRE);
+		powerPole(-50, 4);
+		// Schneehaufen in der Ecke
+		fill(-60, 1, 8, -57, 1, 11, Blocks.SNOW_BLOCK);
+		fill(-60, 2, 10, -58, 2, 11, Blocks.SNOW_BLOCK);
+		// Stacheldraht auf den Mauern
+		for (int x = -61; x <= -41; x += 2) {
+			set(x, 6, -12, Blocks.COBWEB);
+			set(x, 6, 12, Blocks.COBWEB);
+		}
+		window(-52, 1, -12, -51, 2, -12, 0, -1, "teleporter_c");
+		map.addZombieSpawn(pos(-48, 1, 6), "teleporter_c");
+	}
+
+	private void teleporterCDetails() {
+		fill(-62, 1, -2, -62, 3, 2, Blocks.AIR);
+		teleporterRoom(-71, 0, -66, -76);
+		window(-80, 1, 5, -80, 2, 6, -1, 0, "teleporter_c");
+		map.addZombieSpawn(pos(-72, 1, -7), "teleporter_c");
+		lights(-78, -8, -64, 8, 7);
+	}
+
+	// ================================================================ Kulisse: Schornsteine und Kran
+
+	private void skyline() {
+		for (int[] c : new int[][] {{-46, -63}, {-22, -63}, {-2, -63}, {36, -60}, {38, -42}}) {
+			fill(c[0], 1, c[1], c[0] + 1, 26, c[1] + 1, Blocks.BRICKS);
+			fill(c[0], 27, c[1], c[0] + 1, 27, c[1] + 1, Blocks.CAMPFIRE);
+		}
+		// Kran mit dem hängenden Kopf des Riesen
+		fill(30, 1, -60, 30, 24, -60, Blocks.POLISHED_BLACKSTONE);
+		fill(12, 24, -60, 29, 24, -60, Blocks.POLISHED_BLACKSTONE);
+		fill(16, 17, -60, 16, 23, -60, Blocks.IRON_BARS);
+		fill(15, 13, -61, 17, 16, -59, Blocks.POLISHED_BLACKSTONE);
+		set(15, 15, -59, Blocks.SHROOMLIGHT);
+		set(17, 15, -59, Blocks.SHROOMLIGHT);
 	}
 
 	// ================================================================ Bausteine
 
-	/** Raum mit Boden, Wänden und optional Decke. Wände teilt er sich mit Nachbarn. */
-	private void room(int x1, int z1, int x2, int z2, int floorY, int wallTop, Block wall, Block floor, boolean roof) {
-		fill(x1, floorY, z1, x2, floorY, z2, floor);
-		walls(x1, z1, x2, z2, floorY + 1, wallTop, wall);
+	/** Raum mit Boden (y = 0), Wänden und optional Decke. Wände teilt er sich mit Nachbarn. */
+	private void room(int x1, int z1, int x2, int z2, int wallTop, Block wall, Block floor, boolean roof) {
+		fill(x1, 0, z1, x2, 0, z2, floor);
+		walls(x1, z1, x2, z2, 1, wallTop, wall);
 		if (roof) {
 			fill(x1, wallTop + 1, z1, x2, wallTop + 1, z2, wall);
 		}
 	}
 
-	/** Tiefer gelegener Bereich (Boden auf y = -2). */
-	private void lowerArea(int x1, int z1, int x2, int z2, int wallTop, boolean roof, Block wall, Block floor) {
-		fill(x1 + 1, -1, z1 + 1, x2 - 1, 0, z2 - 1, Blocks.AIR);
-		room(x1, z1, x2, z2, -2, wallTop, wall, floor, roof);
+	/** Teleporterraum: Wände aus Fliesen und ein Glasdach. */
+	private void glassRoom(int x1, int z1, int x2, int z2, int wallTop) {
+		room(x1, z1, x2, z2, wallTop, Blocks.DEEPSLATE_TILES, Blocks.POLISHED_DEEPSLATE, false);
+		fill(x1 + 1, wallTop + 1, z1 + 1, x2 - 1, wallTop + 1, z2 - 1, Blocks.GLASS);
+	}
+
+	/** Einrichtung eines Teleporterraums: runde Plattform in der Mitte, zwei glühende Gruben. */
+	private void teleporterRoom(int padX, int padZ, int pitX1, int pitX2) {
+		roundPad(padX, 0, padZ);
+		for (int[] c : new int[][] {{-3, -3}, {3, -3}, {-3, 3}, {3, 3}}) {
+			fill(padX + c[0], 1, padZ + c[1], padX + c[0], 3, padZ + c[1], Blocks.IRON_BARS);
+			set(padX + c[0], 4, padZ + c[1], Blocks.END_ROD);
+		}
+		glowPit(pitX1, padZ);
+		glowPit(pitX2, padZ);
+	}
+
+	/** Runde Teleporter-Plattform: Eisenkern mit Leuchtring. */
+	private void roundPad(int x, int floorY, int z) {
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				int d2 = dx * dx + dz * dz;
+				if (d2 <= 5) {
+					set(x + dx, floorY, z + dz, d2 <= 1 ? Blocks.IRON_BLOCK : Blocks.SEA_LANTERN);
+				}
+			}
+		}
+	}
+
+	/** Orange glühende Grube im Boden mit Geländer. */
+	private void glowPit(int x, int z) {
+		fill(x - 1, 0, z - 1, x + 1, 0, z + 1, Blocks.SHROOMLIGHT);
+		walls(x - 2, z - 2, x + 2, z + 2, 1, 1, Blocks.IRON_BARS);
 	}
 
 	private void walls(int x1, int z1, int x2, int z2, int yFrom, int yTo, Block wall) {
@@ -256,37 +443,57 @@ public final class RieseMap {
 		fill(x2, yFrom, z1, x2, yTo, z2, wall);
 	}
 
-	/** Obergeschoss (Boden auf y = 5) über einem Teil eines Raums, mit Geländer zur Südseite. */
-	private void mezzanine(int x1, int x2, int z1, int z2) {
-		fill(x1, 5, z1, x2, 5, z2, Blocks.SPRUCE_PLANKS);
-		fill(x1, 6, z2, x2, 6, z2, Blocks.OAK_FENCE);
-	}
-
-	/** Treppe aus Blöcken von Süden (zStart) nach Norden hoch auf das Obergeschoss. */
-	private void stairs(int x1, int x2, int zStart, int zEnd) {
-		int height = 1;
-		for (int z = zStart; z >= zEnd && height <= 5; z--, height++) {
-			fill(x1, 1, z, x2, height, z, Blocks.STONE_BRICKS);
-		}
-		// Lücke im Geländer oben an der Treppe
-		fill(x1, 6, zEnd - 1, x2, 6, zEnd - 1, Blocks.AIR);
-	}
-
-	private void teleporterPad(int x, int floorY, int z) {
-		fill(x - 1, floorY, z - 1, x + 1, floorY, z + 1, Blocks.IRON_BLOCK);
-		set(x, floorY, z, Blocks.SEA_LANTERN);
-		for (int[] c : new int[][] {{-2, -2}, {2, -2}, {-2, 2}, {2, 2}}) {
-			fill(x + c[0], floorY + 1, z + c[1], x + c[0], floorY + 3, z + c[1], Blocks.IRON_BARS);
-			set(x + c[0], floorY + 4, z + c[1], Blocks.END_ROD);
+	/**
+	 * Treppe aus vollen Blöcken, die in Richtung (dx, dz) um je einen Block ansteigt.
+	 *
+	 * @param width Breite quer zur Laufrichtung
+	 */
+	private void stairs(int x, int z, int dx, int dz, int width, int height, Block block) {
+		for (int h = 1; h <= height; h++) {
+			int bx = x + dx * (h - 1);
+			int bz = z + dz * (h - 1);
+			if (dx != 0) {
+				fill(bx, 1, bz, bx, h, bz + width - 1, block);
+			} else {
+				fill(bx, 1, bz, bx + width - 1, h, bz, block);
+			}
 		}
 	}
 
-	/** Lampen im Boden (wallTop = 0) oder in der Decke (y = wallTop + 1). */
+	/** Strommast mit Querbalken. */
+	private void powerPole(int x, int z) {
+		fill(x, 1, z, x, 9, z, Blocks.SPRUCE_FENCE);
+		fill(x - 1, 9, z, x + 1, 9, z, Blocks.SPRUCE_PLANKS);
+	}
+
+	/** Laterne auf einem Pfosten. */
+	private void lampPost(int x, int z) {
+		fill(x, 1, z, x, 3, z, Blocks.SPRUCE_FENCE);
+		set(x, 4, z, Blocks.LANTERN);
+	}
+
+	/** Lampen in der Decke (y = wallTop + 1). */
 	private void lights(int x1, int z1, int x2, int z2, int wallTop) {
-		int y = wallTop == 0 ? 0 : wallTop + 1;
 		for (int x = x1; x <= x2; x += 6) {
 			for (int z = z1; z <= z2; z += 6) {
-				set(x, y, z, Blocks.SEA_LANTERN);
+				set(x, wallTop + 1, z, Blocks.SEA_LANTERN);
+			}
+		}
+	}
+
+	/** Schneedecke: auf jeden freien Platz in Höhe y, unter dem der angegebene Block liegt. */
+	private void snow(int x1, int z1, int x2, int z2, int y, Block ground) {
+		BlockState snow = Blocks.SNOW.defaultBlockState();
+		for (int x = x1; x <= x2; x++) {
+			for (int z = z1; z <= z2; z++) {
+				// Ein paar Stellen bleiben frei, damit es nicht wie ein Teppich aussieht.
+				if (Math.floorMod(x * 7 + z * 13, 11) < 2) {
+					continue;
+				}
+				BlockPos p = pos(x, y, z);
+				if (level.getBlockState(p).isAir() && level.getBlockState(p.below()).is(ground)) {
+					level.setBlock(p, snow, 2);
+				}
 			}
 		}
 	}
@@ -305,18 +512,18 @@ public final class RieseMap {
 	}
 
 	/**
-	 * Vernageltes Fenster in einer Außenwand, dahinter ein geschlossener Käfig mit Zombie-Spawnpunkt.
+	 * Vernageltes Fenster in einer Außenwand (Boden y = 0), dahinter ein geschlossener Käfig
+	 * mit Zombie-Spawnpunkt.
 	 *
-	 * @param dx     Richtung nach draußen in X (-1, 0, 1)
-	 * @param dz     Richtung nach draußen in Z (-1, 0, 1)
-	 * @param zone   Zone des Spawnpunkts (null = Start)
-	 * @param floorY Bodenhöhe vor dem Fenster
+	 * @param dx   Richtung nach draußen in X (-1, 0, 1)
+	 * @param dz   Richtung nach draußen in Z (-1, 0, 1)
+	 * @param zone Zone des Spawnpunkts (null = Start)
 	 */
-	private void window(int x1, int y1, int z1, int x2, int y2, int z2, int dx, int dz, String zone, int floorY) {
+	private void window(int x1, int y1, int z1, int x2, int y2, int z2, int dx, int dz, String zone) {
 		int sideX = dx == 0 ? 1 : 0;
 		int sideZ = dz == 0 ? 1 : 0;
-		fill(x1 - sideX + dx, floorY, z1 - sideZ + dz, x2 + sideX + dx * 4, floorY + 3, z2 + sideZ + dz * 4, Blocks.COBBLESTONE);
-		fill(x1 + dx, floorY + 1, z1 + dz, x2 + dx * 3, floorY + 2, z2 + dz * 3, Blocks.AIR);
+		fill(x1 - sideX + dx, 0, z1 - sideZ + dz, x2 + sideX + dx * 4, 3, z2 + sideZ + dz * 4, Blocks.COBBLESTONE);
+		fill(x1 + dx, 1, z1 + dz, x2 + dx * 3, 2, z2 + dz * 3, Blocks.AIR);
 
 		fill(x1, y1, z1, x2, y2, z2, Blocks.SPRUCE_PLANKS);
 		MapData.Window window = new MapData.Window();
@@ -324,7 +531,7 @@ public final class RieseMap {
 		window.boards = BlockSnapshots.capture(level, window);
 		map.addWindow(window);
 
-		map.addZombieSpawn(pos(x1 + dx * 3, floorY + 1, z1 + dz * 3), zone);
+		map.addZombieSpawn(pos(x1 + dx * 3, 1, z1 + dz * 3), zone);
 	}
 
 	/** Wandwaffe: ein Goldblock in der Wand. */
