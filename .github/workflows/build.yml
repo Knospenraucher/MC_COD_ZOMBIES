@@ -20,13 +20,12 @@ jobs:
       - name: Signaturen pruefen (temporaer)
         continue-on-error: true
         run: |
-          J=$(find ~/.gradle/caches/fabric-loom -name 'minecraft-client*.jar' | head -1); echo "$J"
-          unzip -l "$J" | grep -i -E 'hand|firstperson' | head -40
-          C=$(unzip -l "$J" | grep -o 'net/minecraft/client/renderer/[A-Za-z/]*ItemInHandRenderer.class' | head -1 | sed 's/.class$//; s#/#.#g'); echo "$C"
-          [ -n "$C" ] && javap -cp "$J" "$C" | grep -i render
-          javap -cp "$J" net.minecraft.client.player.AbstractClientPlayer | grep -i field
-          javap -cp "$J" net.minecraft.client.Minecraft | grep -i delta
-          javap -cp "$J" net.minecraft.client.DeltaTracker | grep -i partial
+          find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft | head
+          J=$(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i 'minecraft-\(client\|merged\|common\)' | head -1); echo "JAR $J"
+          for J in $(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft); do unzip -l "$J" | grep -E 'InHand|FirstPerson|AbstractClientPlayer\.class|client/DeltaTracker\.class' | head -20; done
+          CP=$(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft | tr '\n' ':')
+          for C in net.minecraft.client.renderer.ItemInHandRenderer net.minecraft.client.player.AbstractClientPlayer net.minecraft.client.DeltaTracker; do echo "== $C"; javap -cp "$CP" "$C" 2>&1 | grep -i -E 'render|field|partial|class' | head -30; done
+          javap -cp "$CP" net.minecraft.client.Minecraft 2>&1 | grep -i delta
       - name: Mod-Jar hochladen
         uses: actions/upload-artifact@v4
         with:
