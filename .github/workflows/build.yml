@@ -17,6 +17,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build
         run: ./gradlew build
+      - name: Signaturen (temporär)
+        if: always()
+        run: |
+          CP=$(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft | tr '\n' ':')
+          FA=$(find ~/.gradle/caches .gradle -name '*.jar' 2>/dev/null | grep -i 'fabric-rendering-v1' | head -3 | tr '\n' ':')
+          echo "FA $FA"
+          for C in net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements; do echo "== $C"; javap -cp "$FA:$CP" "$C" 2>&1 | head -40; done
+          javap -cp "$CP" net.minecraft.client.player.LocalPlayer 2>&1 | grep -i sound
+          javap -cp "$CP" net.minecraft.client.multiplayer.ClientLevel 2>&1 | grep -i sound
+          javap -cp "$CP" net.minecraft.server.level.ServerPlayer 2>&1 | grep -i sound
+          javap -cp "$CP" net.minecraft.sounds.SoundEvents 2>&1 | grep -i 'HEARTBEAT\|PLAYER_HURT '
+          javap -cp "$CP" net.minecraft.world.damagesource.DamageSource 2>&1 | grep 'DamageSource('
+          javap -cp "$CP" net.minecraft.world.damagesource.DamageTypes 2>&1 | grep -i 'MOB_ATTACK\|EXPLOSION'
+          javap -cp "$CP" net.minecraft.tags.DamageTypeTags 2>&1 | grep -i 'COOLDOWN\|KNOCKBACK'
+          javap -cp "$CP" net.minecraft.core.HolderLookup\$Provider 2>&1 | head -20
+          javap -cp "$CP" net.minecraft.core.Registry 2>&1 | grep -i 'getOrThrow\|lookupOrThrow\|get(' 
+          javap -cp "$CP" net.minecraft.client.gui.GuiGraphicsExtractor 2>&1 | grep -i 'fill\|blit\|gradient' | head -30
+          javap -cp "$CP" net.minecraft.world.food.FoodData 2>&1 | head -30
+          javap -cp "$CP" net.minecraft.world.entity.LivingEntity 2>&1 | grep -i 'invulnerable\|hurtTime\|lastHurt' | head
       - name: Mod-Jar hochladen
         uses: actions/upload-artifact@v4
         with:
