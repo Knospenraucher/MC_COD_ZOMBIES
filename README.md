@@ -4,7 +4,7 @@ Eine Fabric-Mod für **Minecraft Java 26.3**: Spieler verteidigen sich in einer 
 Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
 > Aktueller Stand: **Phase 3 – Schusswaffen** (7 Waffen, Munition, Nachladen, Aufrüst-Maschine).
-> Perks, Power-ups, Wiederbeleben und Spezialrunden folgen in Phase 4.
+> Power-ups, Wiederbeleben, Granaten und Spezialrunden folgen noch.
 
 ## Features (Phase 1)
 
@@ -88,6 +88,26 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   Schaden, Magazin und Reserve wie nach Pack-a-Punch im Original, volle Munition, Glitzer und der
   Pack-a-Punch-Name (z. B. KN-44 → „Anointed Avenger“).
 
+## Perks (Black Ops III)
+
+Perk-Automaten stehen in der Map (zwei Blöcke hoch). Rechtsklick kauft den Perk, höchstens 4 gleichzeitig.
+Wer down geht, verliert alle Perks. Die Perk-Leiste steht links unten im HUD.
+
+| Perk | Preis | Wirkung |
+|------|-------|---------|
+| Juggernog | 2500 | 50 statt 20 Leben (BO3: 250 statt 100) |
+| Quick Revive | 500 allein / 1500 | Allein: sofort wieder aufstehen statt down, höchstens 3-mal pro Spiel, kurz unverwundbar. Zu mehreren noch ohne Wirkung (Wiederbeleben kommt noch) |
+| Speed Cola | 3000 | Halbe Nachladezeit |
+| Double Tap Root Beer 2.0 | 2000 | 25 % kürzere Pause zwischen Schüssen, jede Kugel zählt doppelt |
+| Stamin-Up | 2000 | 7 % schneller laufen |
+| Mule Kick | 4000 | Drei statt zwei Schusswaffen; beim Down geht die dritte verloren |
+| Deadshot Daiquiri | 1500 | Halbe Hüftfeuer-Streuung, Kopftreffer zählen schon etwas tiefer |
+| Widow's Wine | 4000 | Trifft dich ein Zombie, bleiben alle Zombies im Umkreis von 4 Blöcken 6 s in Netzen hängen (alle 15 s); Messerstiche spinnen ein |
+| Electric Cherry | 2000 | Nachladen löst einen Schock aus: je leerer das Magazin, desto weiter (bis 4 Blöcke) und stärker (bis 1000) |
+
+**Waffenlimit:** Man trägt höchstens 2 Schusswaffen (Mule Kick: 3). Eine neue Waffe von der Wand oder aus
+der Kiste ersetzt die Waffe in der Hand.
+
 ## Testmap: Nacht der Untoten
 
 `/zombies buildmap nacht` baut ein kleines Farmhaus nach der Beschreibung von „Nacht der Untoten“
@@ -99,7 +119,10 @@ im Fandom-Wiki (etwa 35 × 19 Blöcke, zwei Stockwerke). WaW-Waffen sind durch B
 | Help-Raum (Tür rechts vom Start, 1000) | 2 Fenster und die Höhle, Zufallskiste mit festem Platz, 205 Brecci 1200, M1927 1200 |
 | Obergeschoss (Sofa-Treppe im Startraum oder Schutt-Treppe im Help-Raum, je 1000) | 4 Fenster, Marshal 16 1200, KRM-262 1500, Man-O-War 1800, Scharfschützenschrank mit Drakon 1500 und Locus 5000, Pack-a-Punch |
 
-Handgranaten und Mule Kick fehlen noch (kommen mit Phase 4). Der Bearbeitungsmodus funktioniert
+Zum Testen stehen alle neun Perk-Automaten im Haus (das Original hat keine): im Startraum Juggernog
+(rot), Quick Revive (Blaueis), Speed Cola (Smaragd), Double Tap (Rohgold); im Help-Raum Stamin-Up (Gold),
+Mule Kick (Moos), Deadshot (Obsidian); oben Widow's Wine (Amethyst) und Electric Cherry (Diamant).
+Handgranaten fehlen noch. Der Bearbeitungsmodus funktioniert
 wie bei „Der Riese“, die Vorlage heißt `nacht`.
 
 ## Map: Der Riese (Nachbau von „The Giant“, im Aufbau)
@@ -208,6 +231,8 @@ Alle Befehle brauchen Operator-Rechte (in Einzelspieler: Cheats an).
 | `/zombies box add [x y z]` | Kistenstandort (ohne Koordinaten: der Block, auf den du schaust) |
 | `/zombies box remove <nr>` / `box list` | Kistenstandort entfernen / anzeigen |
 | `/zombies upgrade add [x y z]` | Aufrüst-Maschine (ohne Koordinaten: der Block, auf den du schaust) |
+| `/zombies perk add <perk> [x y z]` | Perk-Automat (unterer Block; der Block darüber gehört dazu). Perks: juggernog, quick_revive, speed_cola, double_tap, stamin_up, mule_kick, deadshot, widows_wine, electric_cherry |
+| `/zombies perk remove <nr>` / `list` | Perk-Automat entfernen / auflisten |
 | `/zombies upgrade remove <nr>` / `upgrade list` | Aufrüst-Maschine entfernen / anzeigen |
 | `/zombies buildmap riese` | Baut den Nachbau von „The Giant“ um dich herum (deine gespeicherte Version, falls vorhanden; ersetzt die Map-Einstellungen, alte Datei wird als `.bak` gesichert) |
 | `/zombies buildmap riese original` | Baut immer die eingebaute Version |
@@ -237,6 +262,10 @@ Die wichtigsten Werte:
 | `zombiesExtraPlayerFactor` | 0.5 | +50 % Zombies pro weiterem Spieler |
 | `maxAliveZombies` | 24 | Maximal gleichzeitig lebende Zombies |
 | `healthEarlyRounds` / `healthPerRound` | [150] / 100 | Zombie-Leben in BO3-Einheiten: Runde 1 / danach zusätzlich pro Runde |
+| `perkLimit` | 4 | So viele Perks gleichzeitig |
+| `weaponLimit` | 2 | So viele Schusswaffen (Mule Kick: eine mehr) |
+| `perkPrices` | BO3-Preise | Preis je Perk-ID |
+| `quickReviveSoloPrice` | 500 | Quick Revive allein |
 | `knifeDamage` | 150 | Schaden eines Messerstichs (V); 150 = Runde-1-Zombies sterben mit einem Stich |
 | `meleeDamageScale` | 150 | Faust, Schwert, Bogen: Minecraft-Schaden × Faktor (Faust = 150 wie das Messer) |
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
