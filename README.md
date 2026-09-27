@@ -3,15 +3,17 @@
 Eine Fabric-Mod für **Minecraft Java 26.3**: Spieler verteidigen sich in einer eigenen Map gegen
 Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 
-> Aktueller Stand: **Phase 3 – Schusswaffen** (7 Waffen, Munition, Nachladen, Aufrüst-Maschine).
+> Aktueller Stand: **Phase 3 – Schusswaffen** (40 BO3-Waffen, Perks, Leben und Schaden wie in Black Ops III).
 > Power-ups, Wiederbeleben, Granaten und Spezialrunden folgen noch.
 
 ## Features (Phase 1)
 
 - **Start mit der MR6:** Beim Spielstart wird das Inventar geleert (und bei Spielende
   zurückgegeben); jeder bekommt die MR6 voll geladen (Config `startingWeapon`).
-  Zombies haben ihr Leben aus Black Ops III (Runde 1: 150, dann +100 pro Runde, ab Runde 10 ×1,1).
+  Zombies haben ihr Leben aus Black Ops III (Runde 1: 150, dann +100 pro Runde, ab Runde 10 ×1,1),
+  Spieler ebenfalls (siehe [Leben und Schaden](#leben-und-schaden-black-ops-iii)).
 - **Messer auf V:** mit jeder Waffe in der Hand, 150 Schaden wie in BO3, Nahkampf-Kill 130 Punkte.
+  Faust und Schwert machen genauso 150.
   Läufst du auf einen Zombie knapp außer Reichweite (bis 4 Blöcke) zu, machst du einen Ausfallschritt;
   sonst bleibst du stehen.
   Ein gezeichnetes Kampfmesser schwingt dabei durchs Bild. Taste in den Steuerungs-Optionen änderbar.
@@ -21,8 +23,9 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
 - **Rundensystem:** Zombies spawnen an festgelegten Spawnpunkten. Anzahl, Leben, Tempo und Schaden
   steigen pro Runde. Zombies tragen einen Helm und verbrennen deshalb tagsüber nicht. Andere
   Mobs (Tiere, Monster) werden während des Spiels entfernt. Sind alle Zombies tot, beginnt nach einer kurzen Pause die nächste Runde.
-- **Punkte:** 10 pro Treffer, 60 pro Kill, 100 für einen Kopftreffer-Kill (Projektil auf Kopfhöhe),
-  130 für einen Nahkampf-Kill. Jeder Spieler startet mit 500 Punkten. Alles einstellbar.
+- **Punkte wie in BO3:** 10 pro Treffer, beim Kill je nach Trefferzone 100 (Kopf), 70 (Hals),
+  60 (Körper), 50 (Arm, Bein, Explosion), 130 im Nahkampf. Jeder Spieler startet mit 500 Punkten.
+  Wer down geht, verliert 5 % seiner Punkte. Alles einstellbar.
 - **HUD:** Rundenzahl groß links oben, darunter verbleibende Zombies bzw. Countdown, rechts oben die
   Punkteliste aller Spieler (eigener Name grün).
 - **Down / Game Over:** Wer stirbt, geht „down“ und schaut bis zur nächsten Runde als Zuschauer zu.
@@ -80,13 +83,72 @@ Zombie-Wellen, die jede Runde stärker werden. Treffer und Kills bringen Punkte.
   ein leeres Magazin wird automatisch nachgeladen. Wechselt man die Waffe, bricht das Nachladen ab.
   Rechts unten zeigt das HUD Waffenname und „Magazin / Reserve“, der Balken unter dem Item den
   Füllstand des Magazins.
-- **Kopftreffer:** Treffer auf Augenhöhe machen mehr Schaden (Faktor je Waffe) und bringen
-  beim Kill 100 statt 60 Punkte.
+- **Trefferzonen und Reichweite:** Kopftreffer machen je Waffe mehr Schaden, und auf Entfernung
+  verlieren die meisten Waffen Schaden (siehe [Leben und Schaden](#leben-und-schaden-black-ops-iii)).
 - **Wandwaffen und Zufallskiste** geben die Schusswaffen voll geladen. Hat man die Waffe schon,
   füllt ein Kauf an der Wand (Munitionspreis) bzw. ein Kisten-Treffer die Munition auf.
 - **Aufrüst-Maschine (Pack-a-Punch):** Rechtsklick mit einer Schusswaffe in der Hand für 5000 Punkte:
   Schaden, Magazin und Reserve wie nach Pack-a-Punch im Original, volle Munition, Glitzer und der
   Pack-a-Punch-Name (z. B. KN-44 → „Anointed Avenger“).
+
+## Leben und Schaden (Black Ops III)
+
+Leben und Schaden rechnen in BO3-Einheiten, damit alle Zahlen wie im Original sind.
+
+**Zombies.** Runde 1 hat 150 Leben, bis Runde 9 kommen je 100 dazu (950), danach je 10 %, bei jedem
+Schritt abgerundet wie in BO3 (Runde 10: 1045, Runde 20: 2701, Runde 30: 7000, Runde 50: 47073).
+Ab Runde 162 steigt das Leben nicht mehr (2.035.642.980). Kugeln und Messer schieben Zombies nicht zurück.
+
+**Trefferzonen.** Gemessen wird dort, wo die Kugel der Körperachse des Zombies am nächsten kommt
+(so zählt ein Schuss von oben nicht automatisch als Kopftreffer):
+
+| Zone | Höhe über den Füßen | Schaden | Kill-Punkte |
+|---|---|---|---|
+| Kopf | ab 1,50 Blöcke | × Kopftreffer-Faktor der Waffe | 100 |
+| Hals | 1,40 bis 1,50 | × 1 | 70 |
+| Arme | 1,20 bis 1,50, seitlich der Körpermitte | × 1 | 50 |
+| Oberkörper / Bauch | 0,75 bis 1,40 | × 1 | 60 |
+| Beine | unter 0,75 | × 1 | 50 |
+| Explosion, Blitz, Druckwelle | – | – | 50 |
+
+Kopftreffer-Faktoren: MR6 ×3, L-CAR 9 ×6, Weevil ×5, KN-44 ×4 (nach Pack-a-Punch ×5), M8A7 ×5,
+Pharo ×2,75, Ray Gun Mark II ×21,74 (50.000 pro Kopftreffer), Schrotflinten ×1,5, sonst ×4
+(Pistolen ×3). Deadshot Daiquiri zählt den Hals als Kopf.
+
+**Schaden pro Treffer** = Schaden auf diese Entfernung × Faktor der Zone × Restanteil nach
+durchschossenen Zombies, abgerundet. Double Tap verdoppelt ihn.
+
+- **Reichweitenabfall:** bis zur ersten Entfernung voller Schaden, ab der zweiten der Mindestschaden,
+  dazwischen gleitend. Pistolen 8→20 Blöcke, Maschinenpistolen 10→25, Sturmgewehre 20→45,
+  leichte MGs 25→50, Scharfschützen 40→80, Schrot 4→12. MR6, Bootlegger und Locus haben keinen Abfall.
+- **Durchschlag:** Pistolen und Maschinenpistolen treffen 2 Zombies (der zweite bekommt 50 %),
+  Sturmgewehre 3 (je 60 %), MGs 3 (je 75 %), Scharfschützen 5 (je 85 %), Locus 6 (je 90 %),
+  Schrot 1. HVK-30 und 48 Dredge bekommen nach Pack-a-Punch Vollmantel (5 Zombies, je 90 %).
+- **Schrotflinten:** jede Schrotkugel ist ein eigener Treffer (und bringt 10 Punkte).
+- **Explosionen** (XM-53, Ray Gun, Meat Wagon): 100 % im Zentrum, 40 % am Rand, der direkt getroffene
+  Zombie bekommt alles. Dazu wie in BO3 Runde × Zufall 0 bis 99. Die eigene Explosion trifft auch dich:
+  hast du mehr als 75 Leben (Ray Gun: 25), zieht sie genau so viel ab.
+- **Feuerrate** in Schuss pro Minute wie im Original (z. B. 722 Schuss/min = 6 Schuss in einer halben
+  Sekunde), auch schneller als ein Schuss pro Tick.
+
+Beispiele: Die MR6 braucht in Runde 1 drei Kopfschüsse (3 × 60) oder acht Körpertreffer (8 × 20),
+in Runde 2 fünf Kopfschüsse. Die L-CAR 9 tötet mit einem Kopfschuss aus der Nähe bis Runde 8, die
+KN-44 bis Runde 4 (nach Pack-a-Punch bis Runde 9). Das Messer braucht in Runde 1 einen Stich,
+in Runde 2 zwei, in Runde 3 und 4 drei.
+
+**Spieler.** Du hast 150 Leben (Juggernog: 250), ein Zombie-Schlag nimmt 50: nach drei Schlägen bist
+du down, mit Juggernog nach fünf. Die Schwierigkeit spielt keine Rolle, und zwei Zombies können
+gleichzeitig treffen. In Minecraft sind das 30 bzw. 50 Leben (1 Minecraft-Leben = 5 BO3-Leben).
+Wirst du 2,4 Sekunden nicht getroffen, heilst du dich in einer halben Sekunde ganz. Warst du auf
+höchstens 20 %, dauert es 5 Sekunden. Hunger gibt es im Spiel nicht, und Herzen, Hunger und Rüstung
+sind ausgeblendet: Wie in BO3 färbt sich stattdessen der Bildschirmrand rot, bei jedem Treffer
+kurz stärker, und unter 20 % pulsiert er mit Herzschlag.
+
+**Geschätzt** (keine oder nur eine schwache Quelle, alles in der Config änderbar): die Aufteilung
+der MR6 in 20 Schaden × 3, das Spielerleben 150 und der Schlag 50, alle Kopftreffer-Faktoren außer
+L-CAR 9, Weevil, KN-44 und 48 Dredge, Hals-, Körper- und Arm/Bein-Faktor 1, die Zonenhöhen, alle
+Reichweiten des Abfalls, der Durchschlag, die meisten Nachladezeiten, die Pack-a-Punch-Werte vieler
+Waffen, RPK und XM-53 komplett, die Explosions-Formel und der Eigenschaden.
 
 ## Perks (Black Ops III)
 
@@ -95,13 +157,13 @@ Wer down geht, verliert alle Perks. Die Perk-Leiste steht links unten im HUD.
 
 | Perk | Preis | Wirkung |
 |------|-------|---------|
-| Juggernog | 2500 | 50 statt 20 Leben (BO3: 250 statt 100) |
+| Juggernog | 2500 | 250 statt 150 Leben: fünf statt drei Zombie-Schläge |
 | Quick Revive | 500 allein / 1500 | Allein: sofort wieder aufstehen statt down, höchstens 3-mal pro Spiel, kurz unverwundbar. Zu mehreren noch ohne Wirkung (Wiederbeleben kommt noch) |
 | Speed Cola | 3000 | Halbe Nachladezeit |
 | Double Tap Root Beer 2.0 | 2000 | 25 % kürzere Pause zwischen Schüssen, jede Kugel zählt doppelt |
 | Stamin-Up | 2000 | 7 % schneller laufen |
 | Mule Kick | 4000 | Drei statt zwei Schusswaffen; beim Down geht die dritte verloren |
-| Deadshot Daiquiri | 1500 | Halbe Hüftfeuer-Streuung, Kopftreffer zählen schon etwas tiefer |
+| Deadshot Daiquiri | 1500 | Halbe Hüftfeuer-Streuung, Halstreffer zählen als Kopftreffer |
 | Widow's Wine | 4000 | Trifft dich ein Zombie, bleiben alle Zombies im Umkreis von 4 Blöcken 6 s in Netzen hängen (alle 15 s); Messerstiche spinnen ein |
 | Electric Cherry | 2000 | Nachladen löst einen Schock aus: je leerer das Magazin, desto weiter (bis 4 Blöcke) und stärker (bis 1000) |
 
@@ -255,30 +317,41 @@ Die wichtigsten Werte:
 | Wert | Standard | Bedeutung |
 |---|---|---|
 | `startingPoints` | 500 | Startpunkte je Spieler |
-| `pointsPerHit` / `pointsPerKill` | 10 / 60 | Punkte für Treffer / Kill |
-| `pointsPerMeleeKill` / `pointsPerHeadshotKill` | 130 / 100 | Kill-Punkte im Nahkampf / per Kopftreffer |
+| `pointsPerHit` / `pointsPerPellet` | 10 / true | Punkte für einen Treffer, der nicht tötet / auch für jede Schrotkugel |
+| `pointsPerHeadshotKill` / `pointsPerNeckKill` / `pointsPerKill` / `pointsPerLimbKill` | 100 / 70 / 60 / 50 | Kill-Punkte je Trefferzone (Kopf / Hals / Körper / Arm, Bein) |
+| `pointsPerMeleeKill` / `pointsPerExplosiveKill` | 130 / 50 | Kill-Punkte im Nahkampf / durch Explosion, Blitz, Druckwelle |
+| `downPenaltyFraction` / `pointsMax` | 0.05 / 4194303 | Punktabzug beim Down / Höchststand |
+| `hitZones` | siehe oben | Höhen der Trefferzonen, seitlicher Abstand der Arme, Deadshot-Erweiterung |
+| `playerHealth` / `juggernogHealth` | 150 / 250 | Spielerleben in BO3-Einheiten ohne / mit Juggernog |
+| `bo3HealthPerMcHealth` | 5 | So viele BO3-Leben sind ein Minecraft-Leben |
+| `regenDelayTicks` / `veryHurtRegenDelayTicks` / `veryHurtFraction` / `regenPerTick` | 48 / 100 / 0.2 / 0.1 | Heilung: Wartezeit / Wartezeit bei höchstens 20 % / Grenze / Anteil pro Tick |
+| `disableHunger` / `hideVanillaBars` | true / true | Kein Hunger im Spiel / Herzen, Hunger, Rüstung im Spiel ausblenden |
+| `explosiveSelfDamage` / `explosiveSelfDamageCap` / `rayGunSelfDamageCap` | true / 75 / 25 | Eigene Explosionen treffen dich |
+| `explosiveRoundBonus` | true | Explosionen: zusätzlich Runde × Zufall 0 bis 99 |
+| `zombieKnockbackResistance` | 1.0 | 1 = Zombies werden nicht zurückgestoßen |
 | `firstRoundDelaySeconds` / `intermissionSeconds` | 10 / 10 | Wartezeit vor Runde 1 / zwischen Runden |
 | `zombiesBaseCount` / `zombiesPerRound` | 6 / 3 | Zombies in Runde 1 / zusätzlich pro Runde |
 | `zombiesExtraPlayerFactor` | 0.5 | +50 % Zombies pro weiterem Spieler |
 | `maxAliveZombies` | 24 | Maximal gleichzeitig lebende Zombies |
 | `healthEarlyRounds` / `healthPerRound` | [150] / 100 | Zombie-Leben in BO3-Einheiten: Runde 1 / danach zusätzlich pro Runde |
+| `healthMax` | 2147483647 | Würde das Leben darüber steigen, bleibt es stehen (wie in BO3 ab Runde 162) |
 | `perkLimit` | 4 | So viele Perks gleichzeitig |
 | `weaponLimit` | 2 | So viele Schusswaffen (Mule Kick: eine mehr) |
 | `perkPrices` | BO3-Preise | Preis je Perk-ID |
 | `quickReviveSoloPrice` | 500 | Quick Revive allein |
 | `knifeDamage` | 150 | Schaden eines Messerstichs (V); 150 = Runde-1-Zombies sterben mit einem Stich |
-| `meleeDamageScale` | 150 | Faust, Schwert, Bogen: Minecraft-Schaden × Faktor (Faust = 150 wie das Messer) |
+| `meleeDamageScale` | 150 | Bogen, Armbrust: Minecraft-Schaden × Faktor (Faust und Schwert machen `knifeDamage`) |
 | `healthLinearUntilRound` / `healthFactorAfterLinear` | 9 / 1.1 | Ab Runde 10: Leben ×1,1 pro Runde |
 | `walkerSpeed` / `runnerSpeed` | 0.17 / 0.30 | Tempo der Schlenderer / Läufer |
 | `runnersFromRound` / `runnerChancePerRound` / `runnerChanceMax` | 3 / 0.15 / 0.9 | Ab Runde 3 Läufer, Anteil +15 % pro Runde, höchstens 90 % |
 | `walkerAttackWindupTicks` / `walkerAttackCooldownTicks` | 16 / 24 | Schlenderer: Ausholzeit / Pause zwischen Schlägen (20 Ticks = 1 s) |
 | `runnerAttackWindupTicks` / `runnerAttackCooldownTicks` | 8 / 14 | Läufer: Ausholzeit / Pause zwischen Schlägen |
-| `damageBase` / `damagePerRound` / `damageMax` | 6.7 / 0 / 6.7 | Schaden pro Schlag (drei Schläge bis down wie in BO3) |
+| `damageBase` / `damagePerRound` / `damageMax` | 50 / 0 / 50 | Zombie-Schlag in BO3-Einheiten (drei Schläge bis down, mit Juggernog fünf) |
 | `boxPrice` / `boxMoveChance` | 950 / 0.2 | Preis eines Kisten-Drehs / Umzugschance pro Dreh |
 | `boxWeapons` | Liste | Waffen der Zufallskiste mit Gewichtung |
 | `pointsPerBoardRepair` / `windowRepairPointsCapPerRound` | 10 / 500 | Punkte fürs Reparieren |
 | `windowTearIntervalTicks` | 40 | So oft reißt ein Zombie ein Brett heraus (20 Ticks = 1 s) |
-| `guns` | je Waffe | Schaden, Magazin, Reserve, Feuerrate, Nachladezeit, Reichweite, Streuung, Kugeln, Dauerfeuer, Durchschlag, Explosionsradius, Kopftreffer-Faktor |
+| `guns` | je Waffe | Schaden nah/fern (`damage`, `damageMin`) und Abfall-Entfernungen (`maxDamageRange`, `minDamageRange`), Faktoren je Zone, Magazin, Reserve, Feuerrate in Ticks (Kommazahl), Feuerstoß, Nachladezeit, Reichweite, Streuung, Kugeln, Dauerfeuer, Durchschlag und Restanteil, Explosionsradius, alle Pack-a-Punch-Werte (`upgraded…`; 0 = Standard) |
 | `upgradePrice` | 5000 | Preis an der Aufrüst-Maschine |
 | `upgradeDamageMultiplier` / `upgradeAmmoMultiplier` | 2.0 / 1.5 | Wirkung der Aufrüstung, nur für Waffen ohne eigene Pack-a-Punch-Werte |
 | `startWithEmptyInventory` | true | Mit leerem Inventar starten; Inventar kommt bei Spielende zurück |
