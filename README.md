@@ -126,8 +126,9 @@ durchschossenen Zombies, abgerundet. Double Tap verdoppelt ihn.
   Schrot 1. HVK-30 und 48 Dredge bekommen nach Pack-a-Punch Vollmantel (5 Zombies, je 90 %).
 - **Schrotflinten:** jede Schrotkugel ist ein eigener Treffer (und bringt 10 Punkte).
 - **Explosionen** (XM-53, Ray Gun, Meat Wagon): 100 % im Zentrum, 40 % am Rand, der direkt getroffene
-  Zombie bekommt alles. Dazu wie in BO3 Runde × Zufall 0 bis 99. Die eigene Explosion trifft auch dich:
-  hast du mehr als 75 Leben (Ray Gun: 25), zieht sie genau so viel ab.
+  Zombie bekommt alles. XM-53 und Ray Gun machen wie in BO3 zusätzlich Runde × Zufall 0 bis 99.
+  Die eigene Explosion trifft auch dich: hast du mehr als 75 Leben (Ray Gun: 25), zieht sie höchstens
+  so viel ab.
 - **Feuerrate** in Schuss pro Minute wie im Original (z. B. 722 Schuss/min = 6 Schuss in einer halben
   Sekunde), auch schneller als ein Schuss pro Tick.
 
@@ -139,8 +140,8 @@ in Runde 2 zwei, in Runde 3 und 4 drei.
 **Spieler.** Du hast 150 Leben (Juggernog: 250), ein Zombie-Schlag nimmt 50: nach drei Schlägen bist
 du down, mit Juggernog nach fünf. Die Schwierigkeit spielt keine Rolle, und zwei Zombies können
 gleichzeitig treffen. In Minecraft sind das 30 bzw. 50 Leben (1 Minecraft-Leben = 5 BO3-Leben).
-Wirst du 2,4 Sekunden nicht getroffen, heilst du dich in einer halben Sekunde ganz. Warst du auf
-höchstens 20 %, dauert es 5 Sekunden. Hunger gibt es im Spiel nicht, und Herzen, Hunger und Rüstung
+Wirst du 2,4 Sekunden nicht getroffen, bist du sofort wieder ganz geheilt. Warst du auf
+höchstens 20 %, dauert es 5 Sekunden, dann füllt sich das Leben in einer halben Sekunde auf. Hunger gibt es im Spiel nicht, und Herzen, Hunger und Rüstung
 sind ausgeblendet: Wie in BO3 färbt sich stattdessen der Bildschirmrand rot, bei jedem Treffer
 kurz stärker, und unter 20 % pulsiert er mit Herzschlag.
 
@@ -324,10 +325,10 @@ Die wichtigsten Werte:
 | `hitZones` | siehe oben | Höhen der Trefferzonen, seitlicher Abstand der Arme, Deadshot-Erweiterung |
 | `playerHealth` / `juggernogHealth` | 150 / 250 | Spielerleben in BO3-Einheiten ohne / mit Juggernog |
 | `bo3HealthPerMcHealth` | 5 | So viele BO3-Leben sind ein Minecraft-Leben |
-| `regenDelayTicks` / `veryHurtRegenDelayTicks` / `veryHurtFraction` / `regenPerTick` | 48 / 100 / 0.2 / 0.1 | Heilung: Wartezeit / Wartezeit bei höchstens 20 % / Grenze / Anteil pro Tick |
+| `regenDelayTicks` / `veryHurtRegenDelayTicks` / `veryHurtFraction` / `veryHurtRegenPerTick` | 48 / 100 / 0.2 / 0.1 | Heilung: Wartezeit / Wartezeit bei höchstens 20 % / Grenze / danach Anteil pro Tick |
 | `disableHunger` / `hideVanillaBars` | true / true | Kein Hunger im Spiel / Herzen, Hunger, Rüstung im Spiel ausblenden |
 | `explosiveSelfDamage` / `explosiveSelfDamageCap` / `rayGunSelfDamageCap` | true / 75 / 25 | Eigene Explosionen treffen dich |
-| `explosiveRoundBonus` | true | Explosionen: zusätzlich Runde × Zufall 0 bis 99 |
+| `explosiveRoundBonus` | true | XM-53 und Ray Gun: zusätzlich Runde × Zufall 0 bis 99 |
 | `zombieKnockbackResistance` | 1.0 | 1 = Zombies werden nicht zurückgestoßen |
 | `firstRoundDelaySeconds` / `intermissionSeconds` | 10 / 10 | Wartezeit vor Runde 1 / zwischen Runden |
 | `zombiesBaseCount` / `zombiesPerRound` | 6 / 3 | Zombies in Runde 1 / zusätzlich pro Runde |

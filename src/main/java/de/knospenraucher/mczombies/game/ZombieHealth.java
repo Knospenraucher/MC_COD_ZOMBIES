@@ -28,6 +28,8 @@ public final class ZombieHealth {
 	private static final float TOKEN_DAMAGE = 0.001F;
 	/** So lange schützt ein Nahkampftreffer vor dem nächsten (wie die Vanilla-Unverwundbarkeit). */
 	private static final long MELEE_COOLDOWN_TICKS = 10;
+	/** Ab diesem Schaden tötet ein Treffer immer (DG-2, Thundergun). */
+	private static final float INSTAKILL_DAMAGE = 1.0E9F;
 
 	private static final Map<UUID, Pool> POOLS = new HashMap<>();
 
@@ -72,7 +74,8 @@ public final class ZombieHealth {
 		}
 		double damage;
 		if (GunManager.currentShot() != null) {
-			damage = amount;
+			// Wunderwaffen mit "unendlich" Schaden töten auch dann, wenn das Leben über 1e9 liegt (ab Runde 155).
+			damage = amount >= INSTAKILL_DAMAGE ? Math.max(pool.health, amount) : amount;
 		} else if (KnifeMelee.isStabbing()) {
 			// Messer: fester BO3-Schaden, eigene Abklingzeit hat KnifeMelee schon
 			damage = ZombiesConfig.get().knifeDamage;

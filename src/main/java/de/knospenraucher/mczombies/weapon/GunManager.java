@@ -200,7 +200,9 @@ public final class GunManager {
 			case "thunder" -> WonderWeapons.thunder(level, player, stats, damage, upgraded);
 			default -> {
 				if (radius > 0) {
-					fireRocket(level, player, stats, damage, radius, special.equals("ray"), upgraded);
+					// Den Rundenbonus bekommen in BO3 nur Geschosse (Werfer, Ray Gun), nicht der Meat Wagon.
+					boolean roundBonus = special.equals("ray") || "launcher".equals(gun.category());
+					fireRocket(level, player, stats, damage, radius, special.equals("ray"), upgraded, roundBonus);
 				} else {
 					fireBullets(level, player, stack, gun, special.equals("annihilate"));
 				}
@@ -269,7 +271,7 @@ public final class GunManager {
 	}
 
 	private static void fireRocket(ServerLevel level, ServerPlayer player, GunStats stats, float damage, double radius,
-			boolean ray, boolean upgraded) {
+			boolean ray, boolean upgraded, boolean roundBonus) {
 		Vec3 eye = player.getEyePosition();
 		Vec3 dir = spread(player.getLookAngle(), stats.spread * Aiming.spreadFactor(player, 1), player.getRandom());
 		Vec3 end = blockLimitedEnd(level, player, eye, dir, stats.range);
@@ -310,7 +312,7 @@ public final class GunManager {
 			}
 			// Voller Schaden im Zentrum, 40 % am Rand; der direkt getroffene Zombie bekommt alles.
 			double amount = explosionDamage(damage, distance, radius);
-			if (config.explosiveRoundBonus) {
+			if (config.explosiveRoundBonus && roundBonus) {
 				// BO3: Geschosse mit Explosion machen zusätzlich Runde × Zufall 0 bis 99.
 				amount += round * player.getRandom().nextInt(100);
 			}
@@ -351,8 +353,12 @@ public final class GunManager {
 		for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isTarget(e, player))) {
 			AABB box = target.getBoundingBox().inflate(0.1);
 			if (box.contains(eye)) {
-				// Der Zombie steht direkt im Spieler: Treffer aus nächster Nähe.
-				hits.add(new BulletHit(target, eye, 0.0, box));
+				// Der Zombie steht direkt im Spieler: Treffer aus nächster Nähe, aber nur, wenn er
+				// vor und nicht hinter der Schussrichtung steht.
+				Vec3 dir = end.subtract(eye);
+				if ((target.getX() - eye.x) * dir.x + (target.getZ() - eye.z) * dir.z >= 0) {
+					hits.add(new BulletHit(target, eye, 0.0, box));
+				}
 				continue;
 			}
 			box.clip(eye, end).ifPresent(point -> hits.add(new BulletHit(target, point, point.distanceTo(eye), box)));

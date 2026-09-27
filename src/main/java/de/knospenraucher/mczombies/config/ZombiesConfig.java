@@ -379,19 +379,19 @@ public class ZombiesConfig {
 	public double veryHurtFraction = 0.2;
 	/** ... dann dauert es so lange (100 = 5 Sekunden). */
 	public int veryHurtRegenDelayTicks = 100;
-	/** Danach füllt sich pro Tick dieser Anteil des Lebens auf. */
-	public double regenPerTick = 0.1;
+	/** Danach füllt sich pro Tick dieser Anteil des Lebens auf (ohne schwere Verletzung ist man sofort voll). */
+	public double veryHurtRegenPerTick = 0.1;
 	/** Kein Hunger und keine Vanilla-Heilung durch Essen während des Spiels. */
 	public boolean disableHunger = true;
 	/** Herzen, Hunger und Rüstung im Spiel ausblenden (BO3 zeigt kein Leben an; rotes Blut am Rand statt dessen). */
 	public boolean hideVanillaBars = true;
 	/** Eigene Explosionen (XM-53, Ray Gun) verletzen einen selbst, wie in BO3. */
 	public boolean explosiveSelfDamage = true;
-	/** Mehr als so viel (BO3) zieht eine eigene Explosion nicht ab, solange man mehr Leben hat. */
+	/** Mehr als so viel (BO3) zieht eine eigene Explosion nicht ab, solange man mehr Leben hat (sonst den vollen Schaden). */
 	public double explosiveSelfDamageCap = 75.0;
 	/** Dasselbe für die Ray Gun. */
 	public double rayGunSelfDamageCap = 25.0;
-	/** Explosionen bekommen wie in BO3 Zusatzschaden: Runde × Zufall 0 bis 99. */
+	/** Geschosse mit Explosion (XM-53, Ray Gun) bekommen wie in BO3 Zusatzschaden: Runde × Zufall 0 bis 99. */
 	public boolean explosiveRoundBonus = true;
 
 	private static Map<String, Integer> defaultPerkPrices() {

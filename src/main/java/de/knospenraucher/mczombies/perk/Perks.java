@@ -2,6 +2,7 @@ package de.knospenraucher.mczombies.perk;
 
 import de.knospenraucher.mczombies.MCZombies;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
+import de.knospenraucher.mczombies.game.PlayerHealth;
 import de.knospenraucher.mczombies.weapon.GunItem;
 import de.knospenraucher.mczombies.weapon.GunManager;
 import de.knospenraucher.mczombies.weapon.HitZone;
@@ -96,16 +97,33 @@ public final class Perks {
 		OWNED.computeIfAbsent(player.getUUID(), id -> new LinkedHashSet<>()).add(perk);
 		switch (perk) {
 			case JUGGERNOG -> {
-				// BO3: 250 statt 150 Leben (umgerechnet in Minecraft-Leben).
-				ZombiesConfig c = ZombiesConfig.get();
-				double bonus = (c.juggernogHealth - c.playerHealth) / c.bo3HealthPerMcHealth;
-				modifier(player, Attributes.MAX_HEALTH, JUGGERNOG_ID, bonus, AttributeModifier.Operation.ADD_VALUE);
+				applyJuggernog(player);
 				player.setHealth(player.getMaxHealth());
 			}
-			case STAMIN_UP -> modifier(player, Attributes.MOVEMENT_SPEED, STAMIN_UP_ID, STAMIN_UP_SPEED,
-					AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+			case STAMIN_UP -> applyStaminUp(player);
 			default -> {
 			}
+		}
+	}
+
+	/** BO3: 250 statt 150 Leben (umgerechnet in Minecraft-Leben). */
+	private static void applyJuggernog(ServerPlayer player) {
+		ZombiesConfig c = ZombiesConfig.get();
+		double bonus = PlayerHealth.toMinecraft(c.juggernogHealth) - PlayerHealth.toMinecraft(c.playerHealth);
+		modifier(player, Attributes.MAX_HEALTH, JUGGERNOG_ID, bonus, AttributeModifier.Operation.ADD_VALUE);
+	}
+
+	private static void applyStaminUp(ServerPlayer player) {
+		modifier(player, Attributes.MOVEMENT_SPEED, STAMIN_UP_ID, STAMIN_UP_SPEED, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+	}
+
+	/** Nach einem Neuverbinden fehlen die (nicht gespeicherten) Attribut-Wirkungen; setzt sie wieder, ohne zu heilen. */
+	public static void reapply(ServerPlayer player) {
+		if (has(player, Perk.JUGGERNOG)) {
+			applyJuggernog(player);
+		}
+		if (has(player, Perk.STAMIN_UP)) {
+			applyStaminUp(player);
 		}
 	}
 

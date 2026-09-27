@@ -19,8 +19,8 @@ public class MCZombiesClient implements ClientModInitializer {
 				(payload, context) -> ClientGameState.update(payload));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientGameState.clear());
 
-		// Blutiger Bildschirmrand statt Herzen (unter dem restlichen HUD).
-		HudElementRegistry.addLast(MCZombies.id("damage"), DamageOverlay::render);
+		// Blutiger Bildschirmrand statt Herzen (unter Hotbar, Chat und dem restlichen HUD).
+		HudElementRegistry.attachElementAfter(VanillaHudElements.MISC_OVERLAYS, MCZombies.id("damage"), DamageOverlay::render);
 		for (Identifier bar : List.of(VanillaHudElements.HEALTH_BAR, VanillaHudElements.FOOD_BAR, VanillaHudElements.ARMOR_BAR)) {
 			HudElementRegistry.replaceElement(bar, original -> (graphics, deltaTracker) -> {
 				if (!DamageOverlay.hideVanillaBars()) {

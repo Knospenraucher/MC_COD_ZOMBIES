@@ -2,6 +2,7 @@ package de.knospenraucher.mczombies.game;
 
 import de.knospenraucher.mczombies.MCZombies;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
+import de.knospenraucher.mczombies.perk.Perks;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -26,8 +27,9 @@ import java.util.UUID;
  * <p>
  * Ein Spieler hat 150 BO3-Leben (Juggernog: 250), ein Zombie-Schlag nimmt 50: drei Schläge ohne,
  * fünf mit Juggernog. Umgerechnet 1 Minecraft-Leben = 5 BO3-Leben, also 30 bzw. 50 Minecraft-Leben
- * und 10 pro Schlag. Wer 2,4 Sekunden nicht getroffen wird, heilt sich schnell komplett; wer auf
- * höchstens 20 % war, muss 5 Sekunden warten. Hunger und Vanilla-Heilung sind im Spiel aus.
+ * und 10 pro Schlag. Wer 2,4 Sekunden nicht getroffen wird, ist sofort wieder ganz geheilt; wer auf
+ * höchstens 20 % war, muss 5 Sekunden warten und füllt sich dann schnell auf. Hunger und
+ * Vanilla-Heilung sind im Spiel aus.
  */
 public final class PlayerHealth {
 	private static final Identifier BASE_HEALTH_ID = MCZombies.id("bo3_base_health");
@@ -71,12 +73,28 @@ public final class PlayerHealth {
 			return;
 		}
 		instance.removeModifier(BASE_HEALTH_ID);
+		addBaseModifier(instance);
+		player.setHealth(player.getMaxHealth());
+		STATES.remove(player.getUUID());
+	}
+
+	private static void addBaseModifier(AttributeInstance instance) {
 		double bonus = toMinecraft(ZombiesConfig.get().playerHealth) - instance.getBaseValue();
 		if (Math.abs(bonus) > 1.0E-6) {
 			instance.addTransientModifier(new AttributeModifier(BASE_HEALTH_ID, bonus, AttributeModifier.Operation.ADD_VALUE));
 		}
-		player.setHealth(player.getMaxHealth());
-		STATES.remove(player.getUUID());
+	}
+
+	/**
+	 * Wer mitten im Spiel neu verbindet, verliert die (nicht gespeicherten) Lebens-Modifier.
+	 * Setzt sie wieder, ohne zu heilen.
+	 */
+	private static void ensureModifiers(ServerPlayer player) {
+		AttributeInstance instance = player.getAttribute(Attributes.MAX_HEALTH);
+		if (instance != null && !instance.hasModifier(BASE_HEALTH_ID)) {
+			addBaseModifier(instance);
+		}
+		Perks.reapply(player);
 	}
 
 	/** Spielende: normales Minecraft-Leben und Hunger zurück. */
@@ -115,6 +133,7 @@ public final class PlayerHealth {
 			if (c.disableHunger && player.getFoodData().getFoodLevel() != FOOD_WITHOUT_REGEN) {
 				player.getFoodData().setFoodLevel(FOOD_WITHOUT_REGEN);
 			}
+			ensureModifiers(player);
 			float max = player.getMaxHealth();
 			State state = STATES.computeIfAbsent(player.getUUID(), id -> new State());
 			if (player.getHealth() >= max) {
@@ -125,7 +144,12 @@ public final class PlayerHealth {
 			if (player.level().getGameTime() - state.lastHurtTick < delay) {
 				continue;
 			}
-			float step = (float) (max * Math.max(0.01, c.regenPerTick));
+			if (!state.veryHurt) {
+				// Normal verletzt: nach der Wartezeit sofort wieder voll.
+				player.setHealth(max);
+				continue;
+			}
+			float step = (float) (max * Math.max(0.01, c.veryHurtRegenPerTick));
 			player.setHealth(Math.min(max, player.getHealth() + step));
 		}
 	}
@@ -153,7 +177,7 @@ public final class PlayerHealth {
 		ZombiesConfig c = ZombiesConfig.get();
 		double cap = rayGun ? c.rayGunSelfDamageCap : c.explosiveSelfDamageCap;
 		double health = toBo3(player.getHealth());
-		double damage = health > cap ? cap : bo3Damage;
+		double damage = health > cap ? Math.min(cap, bo3Damage) : bo3Damage;
 		Optional<Holder.Reference<DamageType>> type = type(level, OWN_EXPLOSIVE);
 		DamageSource source = type.<DamageSource>map(DamageSource::new).orElseGet(() -> player.damageSources().generic());
 		player.hurtServer(level, source, (float) toMinecraft(damage));

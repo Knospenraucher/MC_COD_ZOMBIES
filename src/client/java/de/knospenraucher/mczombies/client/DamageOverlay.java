@@ -41,11 +41,20 @@ public final class DamageOverlay {
 
 	/** Im Spiel keine Herzen, kein Hunger und keine Rüstung anzeigen (BO3 zeigt kein Leben). */
 	public static boolean hideVanillaBars() {
-		return ClientGameState.state() != GameState.IDLE && ZombiesConfig.get().hideVanillaBars;
+		return ZombiesConfig.get().hideVanillaBars && participating(Minecraft.getInstance());
+	}
+
+	/** Nur Teilnehmer eines laufenden Spiels (wer zuschaut oder nicht mitspielt, behält seine Herzen). */
+	private static boolean participating(Minecraft mc) {
+		if (mc.player == null || ClientGameState.state() == GameState.IDLE) {
+			return false;
+		}
+		String name = mc.player.getName().getString();
+		return ClientGameState.players().stream().anyMatch(entry -> entry.name().equals(name));
 	}
 
 	private static boolean active(Minecraft mc) {
-		return mc.player != null && !mc.player.isSpectator() && ClientGameState.state() != GameState.IDLE;
+		return participating(mc) && !mc.player.isSpectator();
 	}
 
 	private static void tick(Minecraft mc) {
@@ -54,6 +63,10 @@ public final class DamageOverlay {
 			flash = 0.0F;
 			veryHurt = false;
 			heartbeatTimer = 0;
+			return;
+		}
+		if (mc.isPaused()) {
+			// Pausenmenü: kein Herzschlag, nichts verblasst.
 			return;
 		}
 		LocalPlayer player = mc.player;
