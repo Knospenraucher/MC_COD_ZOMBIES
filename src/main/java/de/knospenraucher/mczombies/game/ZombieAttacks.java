@@ -1,5 +1,6 @@
 package de.knospenraucher.mczombies.game;
 
+import de.knospenraucher.mczombies.perk.Perks;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -109,6 +110,9 @@ public final class ZombieAttacks {
 	}
 
 	private static void hit(ServerLevel level, Zombie zombie, ServerPlayer player) {
+		if (Perks.isProtected(player)) {
+			return;
+		}
 		attacking = true;
 		try {
 			player.hurtServer(level, zombie.damageSources().mobAttack(zombie), (float) ZombiesConfig.get().damageBase);
@@ -117,5 +121,8 @@ public final class ZombieAttacks {
 		}
 		level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, player.getX(), player.getY() + 1.0, player.getZ(),
 				3, 0.2, 0.2, 0.2, 0.1);
+		if (player.isAlive() && !player.isSpectator()) {
+			Perks.onHitByZombie(level, player);
+		}
 	}
 }

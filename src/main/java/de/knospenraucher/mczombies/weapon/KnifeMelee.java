@@ -1,5 +1,6 @@
 package de.knospenraucher.mczombies.weapon;
 
+import de.knospenraucher.mczombies.perk.Perks;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -73,6 +74,7 @@ public final class KnifeMelee {
 		} finally {
 			stabbing = false;
 		}
+		Perks.onKnifeHit(player, target);
 	}
 
 	public static boolean isStabbing() {

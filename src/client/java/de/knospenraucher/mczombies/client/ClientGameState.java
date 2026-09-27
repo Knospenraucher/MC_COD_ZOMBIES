@@ -12,6 +12,7 @@ public final class ClientGameState {
 	private static int zombiesLeft;
 	private static int countdown;
 	private static List<HudSyncPayload.Entry> players = List.of();
+	private static List<String> perks = List.of();
 
 	private ClientGameState() {
 	}
@@ -22,6 +23,7 @@ public final class ClientGameState {
 		zombiesLeft = payload.zombiesLeft();
 		countdown = payload.countdown();
 		players = List.copyOf(payload.players());
+		perks = List.copyOf(payload.perks());
 	}
 
 	public static void clear() {
@@ -30,6 +32,7 @@ public final class ClientGameState {
 		zombiesLeft = 0;
 		countdown = 0;
 		players = List.of();
+		perks = List.of();
 	}
 
 	public static GameState state() {
@@ -50,5 +53,10 @@ public final class ClientGameState {
 
 	public static List<HudSyncPayload.Entry> players() {
 		return players;
+	}
+
+	/** IDs der eigenen Perks. */
+	public static List<String> perks() {
+		return perks;
 	}
 }

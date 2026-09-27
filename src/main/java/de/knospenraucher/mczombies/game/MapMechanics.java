@@ -5,9 +5,12 @@ import de.knospenraucher.mczombies.map.BlockSnapshots;
 import de.knospenraucher.mczombies.map.MapData;
 import de.knospenraucher.mczombies.map.MapData.BlockSnapshot;
 import de.knospenraucher.mczombies.map.MapData.Door;
+import de.knospenraucher.mczombies.map.MapData.PerkMachine;
 import de.knospenraucher.mczombies.map.MapData.Region;
 import de.knospenraucher.mczombies.map.MapData.WallWeapon;
 import de.knospenraucher.mczombies.map.MapData.Window;
+import de.knospenraucher.mczombies.perk.Perk;
+import de.knospenraucher.mczombies.perk.Perks;
 import de.knospenraucher.mczombies.weapon.GunItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -24,6 +27,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -174,6 +178,11 @@ public class MapMechanics {
 			useUpgradeMachine(level, player, pos);
 			return true;
 		}
+		PerkMachine perkMachine = map.getPerkMachineAt(pos);
+		if (perkMachine != null) {
+			buyPerk(level, player, perkMachine);
+			return true;
+		}
 		List<BlockPos> boxes = map.getBoxLocations();
 		if (boxes.contains(pos)) {
 			if (pos.equals(activeBox())) {
@@ -208,6 +217,14 @@ public class MapMechanics {
 			}
 		} else if (map.getUpgradeMachines().contains(pos)) {
 			hint = Component.literal("Rechtsklick: Waffe in der Hand aufrüsten [" + ZombiesConfig.get().upgradePrice + " Punkte]");
+		} else if (map.getPerkMachineAt(pos) != null) {
+			Perk perk = Perk.byId(map.getPerkMachineAt(pos).perk);
+			if (perk != null) {
+				hint = Perks.has(player, perk)
+						? Component.literal(perk.displayName() + ": " + perk.description())
+						: Component.literal("Rechtsklick: " + perk.displayName() + " trinken [" + perkPrice(perk) + " Punkte] - "
+								+ perk.description());
+			}
 		} else if (pos.equals(activeBox())) {
 			hint = Component.literal("Rechtsklick: Zufallskiste [" + ZombiesConfig.get().boxPrice + " Punkte]");
 		} else if (windowNear(player, 2.5) != null) {
@@ -305,6 +322,47 @@ public class MapMechanics {
 				40, 0.4, 0.5, 0.4, 1.0);
 		game.broadcast(Component.literal(player.getName().getString() + " hat eine Waffe aufgerüstet!")
 				.withStyle(ChatFormatting.LIGHT_PURPLE));
+	}
+
+	// ================================================================ Perk-Automaten
+
+	private int perkPrice(Perk perk) {
+		ZombiesConfig config = ZombiesConfig.get();
+		return perk == Perk.QUICK_REVIVE && game.isSolo() ? config.quickReviveSoloPrice : config.perkPrice(perk);
+	}
+
+	private void buyPerk(ServerLevel level, ServerPlayer player, PerkMachine machine) {
+		Perk perk = Perk.byId(machine.perk);
+		if (perk == null) {
+			player.sendSystemMessage(Component.literal("Unbekannter Perk: " + machine.perk).withStyle(ChatFormatting.RED));
+			return;
+		}
+		if (Perks.has(player, perk)) {
+			player.sendSystemMessage(Component.literal("Du hast " + perk.displayName() + " schon.").withStyle(ChatFormatting.GRAY), true);
+			return;
+		}
+		int limit = ZombiesConfig.get().perkLimit;
+		if (Perks.count(player) >= limit) {
+			player.sendSystemMessage(Component.literal("Du hast schon " + limit + " Perks.").withStyle(ChatFormatting.GRAY), true);
+			return;
+		}
+		if (perk == Perk.QUICK_REVIVE && game.isSolo() && Perks.soloRevivesUsed(player) >= Perks.SOLO_REVIVES) {
+			player.sendSystemMessage(Component.literal("Quick Revive ist aufgebraucht.").withStyle(ChatFormatting.GRAY), true);
+			return;
+		}
+		int price = perkPrice(perk);
+		if (!game.spendPoints(player, price)) {
+			notEnoughPoints(player, price);
+			return;
+		}
+		Perks.add(player, perk);
+		BlockPos pos = machine.pos.toBlockPos();
+		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.GENERIC_DRINK, SoundSource.PLAYERS, 1.0F, 1.0F);
+		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_BURP, SoundSource.PLAYERS, 0.8F, 1.0F);
+		level.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5,
+				15, 0.4, 0.6, 0.4, 0.0);
+		player.sendSystemMessage(Component.literal(perk.displayName() + ": " + perk.description()).withStyle(ChatFormatting.GREEN), true);
+		game.syncHud();
 	}
 
 	// ================================================================ Zufallskiste
@@ -488,12 +546,45 @@ public class MapMechanics {
 			return;
 		}
 		stack.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
+		if (item instanceof GunItem && replaceIfFull(player, stack)) {
+			return;
+		}
 		give(player, stack);
 		if (item == Items.BOW || item == Items.CROSSBOW) {
 			giveAmmo(player, item);
 		}
 		player.sendSystemMessage(Component.literal("Du hast " + stack.getHoverName().getString() + " bekommen!")
 				.withStyle(ChatFormatting.GREEN), true);
+	}
+
+	/**
+	 * Waffenlimit wie in CoD (2, mit Mule Kick 3): Sind alle Plätze belegt, ersetzt die neue Waffe
+	 * die Schusswaffe in der Hand (oder die erste, wenn man keine in der Hand hält).
+	 *
+	 * @return true, wenn eine Waffe ersetzt wurde
+	 */
+	private static boolean replaceIfFull(ServerPlayer player, ItemStack stack) {
+		Inventory inventory = player.getInventory();
+		int guns = 0;
+		int firstGun = -1;
+		for (int i = 0; i < inventory.getContainerSize(); i++) {
+			if (inventory.getItem(i).getItem() instanceof GunItem) {
+				guns++;
+				if (firstGun < 0) {
+					firstGun = i;
+				}
+			}
+		}
+		if (guns < Perks.weaponLimit(player) || firstGun < 0) {
+			return false;
+		}
+		int selected = inventory.getSelectedSlot();
+		int slot = inventory.getItem(selected).getItem() instanceof GunItem ? selected : firstGun;
+		String old = inventory.getItem(slot).getHoverName().getString();
+		inventory.setItem(slot, stack);
+		player.sendSystemMessage(Component.literal(old + " gegen " + stack.getHoverName().getString() + " getauscht.")
+				.withStyle(ChatFormatting.GREEN), true);
+		return true;
 	}
 
 	/** Schusswaffen: Magazin und Reserve auffüllen; Bogen/Armbrust: Pfeile geben. */

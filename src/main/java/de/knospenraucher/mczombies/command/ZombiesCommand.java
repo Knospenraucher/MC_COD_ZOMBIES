@@ -1,6 +1,8 @@
 package de.knospenraucher.mczombies.command;
 
+import de.knospenraucher.mczombies.perk.Perk;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -48,6 +50,7 @@ import java.util.function.UnaryOperator;
  * /zombies wallweapon add &lt;item&gt; &lt;preis&gt; [munitionspreis] | remove &lt;nr&gt; | list
  * /zombies box add [pos] | remove &lt;nr&gt; | list
  * /zombies upgrade add [pos] | remove &lt;nr&gt; | list
+ * /zombies perk add &lt;perk&gt; [pos] | remove &lt;nr&gt; | list
  * /zombies buildmap riese|nacht [original]
  * /zombies edit start | save | cancel | reset
  * </pre>
@@ -132,6 +135,7 @@ public final class ZombiesCommand {
 						.then(Commands.literal("remove")
 								.then(Commands.argument("nr", IntegerArgumentType.integer(1)).executes(ZombiesCommand::removeUpgrade)))
 						.then(Commands.literal("list").executes(ZombiesCommand::listUpgrades)))
+				.then(perkCommand())
 				.then(Commands.literal("buildmap")
 						.then(Commands.literal("riese").executes(ctx -> buildRiese(ctx, false))
 								.then(Commands.literal("original").executes(ctx -> buildRiese(ctx, true))))
@@ -536,6 +540,65 @@ public final class ZombiesCommand {
 		ctx.getSource().sendSuccess(() -> Component.literal(machines.size() + " Aufrüst-Maschinen:").withStyle(ChatFormatting.GOLD), false);
 		for (int i = 0; i < machines.size(); i++) {
 			String line = " #" + (i + 1) + ": " + format(machines.get(i));
+			ctx.getSource().sendSuccess(() -> Component.literal(line), false);
+		}
+		return machines.size();
+	}
+
+	// ---------------------------------------------------------------- Perk-Automaten
+
+	/** /zombies perk add &lt;perk&gt; [pos] | remove &lt;nr&gt; | list (pos = unterer Block des Automaten). */
+	private static LiteralArgumentBuilder<CommandSourceStack> perkCommand() {
+		LiteralArgumentBuilder<CommandSourceStack> add = Commands.literal("add");
+		for (Perk perk : Perk.values()) {
+			add.then(Commands.literal(perk.id())
+					.executes(ctx -> addPerk(ctx, perk, lookedAtBlock(ctx)))
+					.then(Commands.argument("pos", BlockPosArgument.blockPos())
+							.executes(ctx -> addPerk(ctx, perk, BlockPosArgument.getLoadedBlockPos(ctx, "pos")))));
+		}
+		return Commands.literal("perk")
+				.then(add)
+				.then(Commands.literal("remove")
+						.then(Commands.argument("nr", IntegerArgumentType.integer(1)).executes(ZombiesCommand::removePerk)))
+				.then(Commands.literal("list").executes(ZombiesCommand::listPerks));
+	}
+
+	private static int addPerk(CommandContext<CommandSourceStack> ctx, Perk perk, BlockPos pos) {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		map.addPerkMachine(pos, perk.id());
+		ctx.getSource().sendSuccess(() -> Component.literal(perk.displayName() + "-Automat gesetzt: " + format(pos)
+				+ " (dieser Block und der darüber)"), true);
+		return 1;
+	}
+
+	private static int removePerk(CommandContext<CommandSourceStack> ctx) {
+		MapData map = editableMap(ctx);
+		if (map == null) {
+			return 0;
+		}
+		int nr = IntegerArgumentType.getInteger(ctx, "nr");
+		if (map.removePerkMachine(nr) == null) {
+			ctx.getSource().sendFailure(Component.literal("Perk-Automat #" + nr + " existiert nicht."));
+			return 0;
+		}
+		ctx.getSource().sendSuccess(() -> Component.literal("Perk-Automat #" + nr + " entfernt."), true);
+		return 1;
+	}
+
+	private static int listPerks(CommandContext<CommandSourceStack> ctx) {
+		MapData map = map(ctx);
+		if (map == null) {
+			return 0;
+		}
+		List<MapData.PerkMachine> machines = map.getPerkMachines();
+		ctx.getSource().sendSuccess(() -> Component.literal(machines.size() + " Perk-Automaten:").withStyle(ChatFormatting.GOLD), false);
+		for (int i = 0; i < machines.size(); i++) {
+			MapData.PerkMachine m = machines.get(i);
+			Perk perk = Perk.byId(m.perk);
+			String line = " #" + (i + 1) + ": " + (perk != null ? perk.displayName() : m.perk) + " bei " + format(m.pos.toBlockPos());
 			ctx.getSource().sendSuccess(() -> Component.literal(line), false);
 		}
 		return machines.size();

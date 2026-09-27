@@ -1,5 +1,7 @@
 package de.knospenraucher.mczombies.game;
 
+import de.knospenraucher.mczombies.perk.Perk;
+import de.knospenraucher.mczombies.perk.Perks;
 import de.knospenraucher.mczombies.MCZombies;
 import de.knospenraucher.mczombies.weapon.GunItem;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
@@ -171,7 +173,10 @@ public class GameManager {
 		zombiesToSpawn = 0;
 
 		mechanics.start(level);
+		Perks.reset();
 		for (ServerPlayer player : participants) {
+			// Übrig gebliebene Perk-Wirkungen (z. B. nach einem Absturz) entfernen.
+			Perks.clear(player);
 			players.put(player.getUUID(), new PlayerData(
 					player.getName().getString(), config.startingPoints, currentGameType(player)));
 			if (config.startWithEmptyInventory) {
@@ -548,6 +553,15 @@ public class GameManager {
 		if (data == null) {
 			return false;
 		}
+		if (!data.down && isSolo() && Perks.trySoloRevive(player)) {
+			int left = Perks.SOLO_REVIVES - Perks.soloRevivesUsed(player);
+			broadcast(Component.literal(data.name + " steht mit Quick Revive wieder auf! (noch " + left + "x)")
+					.withStyle(ChatFormatting.AQUA));
+			syncHud();
+			return true;
+		}
+		// Wer down geht, verliert alle Perks (wie in CoD).
+		Perks.clear(player);
 		if (!data.down) {
 			data.down = true;
 			data.downs++;
@@ -583,6 +597,7 @@ public class GameManager {
 		for (Map.Entry<UUID, PlayerData> entry : players.entrySet()) {
 			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
 			if (player != null) {
+				Perks.clear(player);
 				player.setGameMode(entry.getValue().previousGameType);
 				player.setHealth(player.getMaxHealth());
 				List<ItemStack> saved = entry.getValue().savedInventory;
@@ -596,6 +611,7 @@ public class GameManager {
 				}
 			}
 		}
+		Perks.reset();
 	}
 
 	/** Ermittelt den aktuellen Spielmodus ohne Zugriff auf interne Felder. */
@@ -637,6 +653,11 @@ public class GameManager {
 	}
 
 	// ================================================================ Punkte
+
+	/** Nur ein Teilnehmer: Quick Revive wird dann zur Selbstwiederbelebung. */
+	public boolean isSolo() {
+		return players.size() == 1;
+	}
 
 	public PlayerData getPlayerData(ServerPlayer player) {
 		return players.get(player.getUUID());
@@ -750,11 +771,17 @@ public class GameManager {
 			entries.add(new HudSyncPayload.Entry(data.name, data.points, data.down));
 		}
 		int seconds = state == GameState.INTERMISSION ? (timer + 19) / 20 : 0;
-		HudSyncPayload payload = new HudSyncPayload(state.ordinal(), round,
-				Math.max(0, zombiesToSpawn) + aliveZombies.size(), seconds, entries);
+		int zombiesLeft = Math.max(0, zombiesToSpawn) + aliveZombies.size();
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			if (ServerPlayNetworking.canSend(player, HudSyncPayload.TYPE)) {
-				ServerPlayNetworking.send(player, payload);
+				// Die eigenen Perks bekommt jeder Spieler einzeln mit.
+				List<String> perks = new ArrayList<>();
+				if (state != GameState.IDLE) {
+					for (Perk perk : Perks.list(player)) {
+						perks.add(perk.id());
+					}
+				}
+				ServerPlayNetworking.send(player, new HudSyncPayload(state.ordinal(), round, zombiesLeft, seconds, entries, perks));
 			}
 		}
 	}

@@ -2,6 +2,7 @@ package de.knospenraucher.mczombies.client;
 
 import de.knospenraucher.mczombies.game.GameState;
 import de.knospenraucher.mczombies.network.HudSyncPayload;
+import de.knospenraucher.mczombies.perk.Perk;
 import de.knospenraucher.mczombies.weapon.GunItem;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -53,6 +54,8 @@ public final class ZombiesHud {
 		};
 		graphics.text(font, info, 10, 40, state == GameState.GAME_OVER ? RED : WHITE, true);
 
+		renderPerks(graphics, font);
+
 		// ---- Punkteliste rechts oben
 		String ownName = mc.player != null ? mc.player.getName().getString() : "";
 		int y = 8;
@@ -69,6 +72,25 @@ public final class ZombiesHud {
 			graphics.text(font, name, left, y, nameColor, true);
 			graphics.text(font, points, right - pointsWidth, y, GOLD, true);
 			y += font.lineHeight + 3;
+		}
+	}
+
+	/** Perk-Symbole links unten: farbige Flasche mit Kürzel, wie die Perk-Leiste in CoD. */
+	private static void renderPerks(GuiGraphicsExtractor graphics, Font font) {
+		int size = 18;
+		int x = 10;
+		int y = graphics.guiHeight() - size - 10;
+		for (String id : ClientGameState.perks()) {
+			Perk perk = Perk.byId(id);
+			if (perk == null) {
+				continue;
+			}
+			graphics.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFF101010);
+			graphics.fill(x, y, x + size, y + size, perk.color());
+			graphics.fill(x + 2, y + 2, x + size - 2, y + 5, 0x40FFFFFF);
+			String label = perk.shortName();
+			graphics.text(font, label, x + (size - font.width(label)) / 2 + 1, y + (size - font.lineHeight) / 2 + 1, WHITE, true);
+			x += size + 4;
 		}
 	}
 

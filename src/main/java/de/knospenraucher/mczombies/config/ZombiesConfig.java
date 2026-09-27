@@ -1,5 +1,6 @@
 package de.knospenraucher.mczombies.config;
 
+import de.knospenraucher.mczombies.perk.Perk;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.knospenraucher.mczombies.MCZombies;
@@ -97,6 +98,16 @@ public class ZombiesConfig {
 	public double meleeDamageScale = 150.0;
 	/** Schaden eines Messerstichs (Taste V) in BO3-Einheiten. 150 = Runde-1-Zombies sterben mit einem Stich. */
 	public double knifeDamage = 150.0;
+
+	// ---- Perks (Black Ops III)
+	/** So viele Perks darf ein Spieler gleichzeitig haben. */
+	public int perkLimit = 4;
+	/** So viele Schusswaffen darf man tragen (Mule Kick: eine mehr). Eine neue ersetzt die in der Hand. */
+	public int weaponLimit = 2;
+	/** Preis je Perk (IDs wie in /zombies perk add). */
+	public Map<String, Integer> perkPrices = defaultPerkPrices();
+	/** Quick Revive kostet allein weniger, weil es dann eine Selbstwiederbelebung ist. */
+	public int quickReviveSoloPrice = 500;
 
 	/** Nur noch Rückfallwerte; das Tempo hängt jetzt von der Zombie-Art ab (siehe walkerSpeed/runnerSpeed). */
 	public double speedBase = 0.20;
@@ -303,6 +314,19 @@ public class ZombiesConfig {
 	/** Andere Mobs (Tiere, Monster) während des Spiels aus der Welt entfernen. */
 	public boolean removeOtherMobsDuringGame = true;
 
+	private static Map<String, Integer> defaultPerkPrices() {
+		Map<String, Integer> prices = new LinkedHashMap<>();
+		for (Perk perk : Perk.values()) {
+			prices.put(perk.id(), perk.defaultPrice());
+		}
+		return prices;
+	}
+
+	/** Preis eines Perks laut Config. */
+	public int perkPrice(Perk perk) {
+		return perkPrices.getOrDefault(perk.id(), perk.defaultPrice());
+	}
+
 	/** Passt Werte aus älteren Config-Dateien an geänderte Standards an. */
 	private void migrate() {
 		if (configVersion < 2) {
@@ -338,6 +362,10 @@ public class ZombiesConfig {
 				guns.keySet().removeIf(key -> GunCatalog.get(key) == null);
 			}
 		}
+		if (perkPrices == null) {
+			perkPrices = defaultPerkPrices();
+		}
+		defaultPerkPrices().forEach(perkPrices::putIfAbsent);
 		// Neue Waffen in älteren Dateien ergänzen (vorhandene Werte bleiben).
 		if (guns == null) {
 			guns = defaultGuns();

@@ -3,6 +3,7 @@ package de.knospenraucher.mczombies.weapon;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.config.ZombiesConfig.GunStats;
 import de.knospenraucher.mczombies.network.GunActionPayload;
+import de.knospenraucher.mczombies.perk.Perks;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
@@ -131,7 +132,9 @@ public final class GunManager {
 
 		int burst = Math.max(1, stats.burst);
 		int interval = Math.max(1, stats.burstIntervalTicks);
-		nextShot.put(player.getUUID(), ticks + Math.max(1, stats.fireRateTicks) + (long) (burst - 1) * interval);
+		// Double Tap: kürzere Pause zwischen den Schüssen
+		long fireInterval = Math.max(1, Math.round(stats.fireRateTicks * Perks.fireIntervalFactor(player)));
+		nextShot.put(player.getUUID(), ticks + fireInterval + (long) (burst - 1) * interval);
 		fireOnce(level, player, stack, gun);
 		if (burst > 1) {
 			bursts.put(player.getUUID(), new Burst(player.getInventory().getSelectedSlot(), burst - 1, ticks + interval));
@@ -173,20 +176,23 @@ public final class GunManager {
 
 	private static void fireBullets(ServerLevel level, ServerPlayer player, GunStats stats, float damage, boolean annihilate) {
 		Vec3 eye = player.getEyePosition();
+		damage *= (float) Perks.bulletDamageFactor(player);
+		// Deadshot: weniger Streuung aus der Hüfte
+		double spreadFactor = Aiming.isAiming(player) ? 1.0 : Perks.hipSpreadFactor(player);
 		// Treffer aller Kugeln eines Schusses sammeln (Schrotflinte), damit jeder Gegner
 		// den Schaden als einen einzigen Treffer bekommt.
 		Map<LivingEntity, Float> damageByTarget = new LinkedHashMap<>();
 		Map<LivingEntity, Boolean> headshotByTarget = new HashMap<>();
 		int pellets = Math.max(1, stats.pellets);
 		for (int i = 0; i < pellets; i++) {
-			Vec3 dir = spread(player.getLookAngle(), stats.spread * Aiming.spreadFactor(player, pellets), player.getRandom());
+			Vec3 dir = spread(player.getLookAngle(), stats.spread * Aiming.spreadFactor(player, pellets) * spreadFactor, player.getRandom());
 			Vec3 end = blockLimitedEnd(level, player, eye, dir, stats.range);
 			List<BulletHit> hits = traceEntities(level, player, eye, end);
 			int penetration = Math.max(1, stats.penetration);
 			Vec3 tracerEnd = end;
 			for (int h = 0; h < hits.size() && h < penetration; h++) {
 				BulletHit hit = hits.get(h);
-				boolean headshot = isHeadshot(hit.target(), hit.point());
+				boolean headshot = isHeadshot(hit.target(), hit.point(), player);
 				float amount = headshot ? (float) (damage * stats.headshotMultiplier) : damage;
 				damageByTarget.merge(hit.target(), amount, Float::sum);
 				headshotByTarget.merge(hit.target(), headshot, Boolean::logicalOr);
@@ -270,12 +276,12 @@ public final class GunManager {
 	}
 
 	/** Spieler (Mitspieler) werden nie getroffen. */
-	static boolean isTarget(LivingEntity entity, ServerPlayer shooter) {
+	public static boolean isTarget(LivingEntity entity, ServerPlayer shooter) {
 		return entity != shooter && entity.isAlive() && !(entity instanceof Player);
 	}
 
-	private static boolean isHeadshot(LivingEntity target, Vec3 point) {
-		return point.y >= target.getEyeY() - ZombiesConfig.get().headshotTolerance;
+	private static boolean isHeadshot(LivingEntity target, Vec3 point, ServerPlayer shooter) {
+		return point.y >= target.getEyeY() - ZombiesConfig.get().headshotTolerance - Perks.extraHeadTolerance(shooter);
 	}
 
 	private static Vec3 spread(Vec3 look, double spread, RandomSource random) {
@@ -287,7 +293,7 @@ public final class GunManager {
 	}
 
 	/** Schaden als Spielerangriff, damit Punkte und Kills dem Schützen gutgeschrieben werden. */
-	static void hurt(ServerLevel level, ServerPlayer shooter, LivingEntity target, float amount, boolean headshot) {
+	public static void hurt(ServerLevel level, ServerPlayer shooter, LivingEntity target, float amount, boolean headshot) {
 		Shot previous = currentShot;
 		currentShot = new Shot(shooter, headshot);
 		try {
@@ -383,7 +389,10 @@ public final class GunManager {
 			return;
 		}
 		int slot = player.getInventory().getSelectedSlot();
-		reloads.put(player.getUUID(), new Reload(slot, ticks + Math.max(1, gun.stats().reloadTicks)));
+		// Speed Cola: halbe Nachladezeit
+		long reloadTicks = Math.max(1, Math.round(gun.stats().reloadTicks * Perks.reloadFactor(player)));
+		reloads.put(player.getUUID(), new Reload(slot, ticks + reloadTicks));
+		Perks.onReloadStart(player, gun.getMag(stack), gun.magazineSize(stack));
 		GunItem.setReloading(stack, true);
 		player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.ARMOR_EQUIP_IRON, SoundSource.PLAYERS, 0.8F, 1.3F);

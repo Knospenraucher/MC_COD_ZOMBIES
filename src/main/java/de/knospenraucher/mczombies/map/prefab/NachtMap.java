@@ -2,6 +2,7 @@ package de.knospenraucher.mczombies.map.prefab;
 
 import de.knospenraucher.mczombies.map.BlockSnapshots;
 import de.knospenraucher.mczombies.map.MapData;
+import de.knospenraucher.mczombies.perk.Perk;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -27,7 +28,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * </pre>
  * Waffen aus World at War sind durch ähnliche BO3-Waffen ersetzt (Kar98k → Sheiva, M1A1 → M8A7,
  * Doppelflinte → 205 Brecci, Thompson → M1927, Abgesägte → Marshal 16, Trench Gun → KRM-262,
- * BAR → Man-O-War, Kar98k mit Zielfernrohr → Drakon). Handgranaten und Mule Kick fehlen noch (Phase 4).
+ * BAR → Man-O-War, Kar98k mit Zielfernrohr → Drakon). Handgranaten fehlen noch. Das Original hat keine
+ * Perks; zum Testen stehen hier alle neun BO3-Perk-Automaten.
  * Norden ist -Z, Boden y = 0, Obergeschoss-Boden y = 6.
  */
 public final class NachtMap {
@@ -79,6 +81,7 @@ public final class NachtMap {
 		windows();
 		weapons();
 		boxAndPackAPunch();
+		perkMachines();
 		decoration();
 
 		map.setPlayerSpawn(pos(0, 1, START_Z));
@@ -253,6 +256,28 @@ public final class NachtMap {
 		set(20, UP + 2, -7, Blocks.IRON_BLOCK);
 		set(22, UP + 2, -7, Blocks.IRON_BLOCK);
 		map.addUpgradeMachine(pos(21, UP + 2, -7));
+	}
+
+	/** Alle neun BO3-Perks, verteilt auf die Räume (je ein zwei Blöcke hoher Automat in Perk-Farbe). */
+	private void perkMachines() {
+		// Startraum
+		perkMachine(8, 1, -8, Perk.JUGGERNOG, Blocks.REDSTONE_BLOCK);
+		perkMachine(-9, 1, -8, Perk.QUICK_REVIVE, Blocks.BLUE_ICE);
+		perkMachine(8, 1, 8, Perk.SPEED_COLA, Blocks.EMERALD_BLOCK);
+		perkMachine(-1, 1, 8, Perk.DOUBLE_TAP, Blocks.RAW_GOLD_BLOCK);
+		// Help-Raum
+		perkMachine(22, 1, -1, Perk.STAMIN_UP, Blocks.GOLD_BLOCK);
+		perkMachine(12, 1, -8, Perk.MULE_KICK, Blocks.MOSS_BLOCK);
+		perkMachine(19, 1, 8, Perk.DEADSHOT, Blocks.OBSIDIAN);
+		// Obergeschoss
+		perkMachine(9, UP + 1, 8, Perk.WIDOWS_WINE, Blocks.AMETHYST_BLOCK);
+		perkMachine(17, UP + 1, 8, Perk.ELECTRIC_CHERRY, Blocks.DIAMOND_BLOCK);
+	}
+
+	private void perkMachine(int x, int y, int z, Perk perk, Block block) {
+		set(x, y, z, block);
+		set(x, y + 1, z, block);
+		map.addPerkMachine(pos(x, y, z), perk.id());
 	}
 
 	private void wallWeapon(int x, int y, int z, String item, int price) {

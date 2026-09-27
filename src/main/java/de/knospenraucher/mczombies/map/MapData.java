@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 
 /**
  * Map-Konfiguration einer Welt: Spawnpunkte, Spieler-Startpunkt, Türen, Fenster,
- * Wandwaffen und Standorte der Zufallskiste.
+ * Wandwaffen, Standorte der Zufallskiste, Aufrüst-Maschinen und Perk-Automaten.
  * <p>
  * Wird als {@code mczombies_map.json} im Weltordner gespeichert, damit jede Map ihre
  * eigenen Einstellungen mitbringt (Welt kopieren = Map inklusive Setup kopieren).
@@ -116,6 +116,12 @@ public class MapData {
 		public int ammoPrice;
 	}
 
+	/** Perk-Automat: unterer Block eines zwei Blöcke hohen Automaten und die Perk-ID. */
+	public static class PerkMachine {
+		public Pos pos;
+		public String perk;
+	}
+
 	/** Bereich einer gebauten Vorlage: Name, Bezugspunkt und die zwei Ecken (Weltkoordinaten). */
 	public static class TemplateInfo {
 		public String name;
@@ -133,6 +139,7 @@ public class MapData {
 		List<WallWeapon> wallWeapons = new ArrayList<>();
 		List<Pos> boxLocations = new ArrayList<>();
 		List<Pos> upgradeMachines = new ArrayList<>();
+		List<PerkMachine> perkMachines = new ArrayList<>();
 		/** Aus welcher Vorlage die Map gebaut wurde (null = von Hand aufgebaut). */
 		TemplateInfo template = null;
 		/** true, solange der Bearbeitungsmodus an ist. */
@@ -155,6 +162,7 @@ public class MapData {
 			wallWeapons.forEach(w -> action.accept(w.pos));
 			boxLocations.forEach(action);
 			upgradeMachines.forEach(action);
+			perkMachines.forEach(m -> action.accept(m.pos));
 		}
 
 		/** Ältere Dateien kennen manche Listen noch nicht. */
@@ -165,6 +173,7 @@ public class MapData {
 			if (wallWeapons == null) wallWeapons = new ArrayList<>();
 			if (boxLocations == null) boxLocations = new ArrayList<>();
 			if (upgradeMachines == null) upgradeMachines = new ArrayList<>();
+			if (perkMachines == null) perkMachines = new ArrayList<>();
 		}
 	}
 
@@ -433,5 +442,36 @@ public class MapData {
 
 	public Pos removeUpgradeMachine(int nr) {
 		return removeAt(data.upgradeMachines, nr);
+	}
+
+	// ================================================================ Perk-Automaten
+
+	public List<PerkMachine> getPerkMachines() {
+		return List.copyOf(data.perkMachines);
+	}
+
+	/** Automat, zu dem dieser Block gehört (unterer oder oberer Block), oder null. */
+	public PerkMachine getPerkMachineAt(BlockPos pos) {
+		for (PerkMachine m : data.perkMachines) {
+			BlockPos base = m.pos.toBlockPos();
+			if (base.equals(pos) || base.above().equals(pos)) {
+				return m;
+			}
+		}
+		return null;
+	}
+
+	/** Ersetzt einen vorhandenen Automaten an derselben Position. */
+	public void addPerkMachine(BlockPos pos, String perk) {
+		data.perkMachines.removeIf(m -> m.pos.toBlockPos().equals(pos));
+		PerkMachine machine = new PerkMachine();
+		machine.pos = new Pos(pos);
+		machine.perk = perk;
+		data.perkMachines.add(machine);
+		save();
+	}
+
+	public PerkMachine removePerkMachine(int nr) {
+		return removeAt(data.perkMachines, nr);
 	}
 }

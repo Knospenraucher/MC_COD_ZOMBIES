@@ -17,8 +17,9 @@ import java.util.List;
  * @param zombiesLeft  noch zu tötende Zombies dieser Runde
  * @param countdown    Sekunden bis zur nächsten Runde (nur in der Pause)
  * @param players      Punktestand aller Teilnehmer, absteigend sortiert
+ * @param perks        IDs der eigenen Perks (in Kaufreihenfolge)
  */
-public record HudSyncPayload(int state, int round, int zombiesLeft, int countdown, List<Entry> players)
+public record HudSyncPayload(int state, int round, int zombiesLeft, int countdown, List<Entry> players, List<String> perks)
 		implements CustomPacketPayload {
 
 	public static final CustomPacketPayload.Type<HudSyncPayload> TYPE =
@@ -39,6 +40,7 @@ public record HudSyncPayload(int state, int round, int zombiesLeft, int countdow
 			ByteBufCodecs.VAR_INT, HudSyncPayload::zombiesLeft,
 			ByteBufCodecs.VAR_INT, HudSyncPayload::countdown,
 			Entry.CODEC.apply(ByteBufCodecs.list()), HudSyncPayload::players,
+			ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), HudSyncPayload::perks,
 			HudSyncPayload::new);
 
 	@Override
