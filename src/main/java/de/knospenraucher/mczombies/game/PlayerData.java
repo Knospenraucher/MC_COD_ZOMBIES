@@ -13,6 +13,8 @@ public class PlayerData {
 	public int kills;
 	public int headshots;
 	public int downs;
+	/** Punkte, die beim letzten Down abgezogen wurden (bekommt später der Wiederbeleber). */
+	public int pointsLostWhenDowned;
 	/** true, solange der Spieler in der aktuellen Runde ausgeschaltet ist. */
 	public boolean down;
 	/** Spielmodus vor Spielbeginn, wird bei Spielende wiederhergestellt. */

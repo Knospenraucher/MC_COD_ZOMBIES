@@ -28,7 +28,7 @@ public class ZombiesConfig {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("mczombies.json");
 
 	/** Aktuelle Version der Config-Datei (für automatische Anpassung alter Dateien). */
-	private static final int CURRENT_VERSION = 7;
+	private static final int CURRENT_VERSION = 8;
 
 	private static ZombiesConfig instance = new ZombiesConfig();
 
@@ -38,16 +38,51 @@ public class ZombiesConfig {
 	// ---------------------------------------------------------------- Punkte
 	/** Startpunkte jedes Spielers. */
 	public int startingPoints = 500;
-	/** Punkte für jeden Treffer, der einen Zombie nicht tötet. */
+	/** Punkte für jeden Treffer, der einen Zombie nicht tötet (bei Durchschüssen je Zombie). */
 	public int pointsPerHit = 10;
-	/** Punkte für einen normalen Kill. */
+	/** Schrotflinten: jede Schrotkugel, die trifft, bringt pointsPerHit (false = einmal pro Schuss und Zombie). */
+	public boolean pointsPerPellet = true;
+	/** Punkte für einen Kill mit Treffer in den Oberkörper oder Bauch. */
 	public int pointsPerKill = 60;
-	/** Punkte für einen Nahkampf-Kill (statt pointsPerKill). */
+	/** Punkte für einen Nahkampf-Kill (Messer, Faust, Schwert). */
 	public int pointsPerMeleeKill = 130;
-	/** Punkte für einen Kopftreffer-Kill mit Projektil (statt pointsPerKill). */
+	/** Punkte für einen Kopftreffer-Kill. */
 	public int pointsPerHeadshotKill = 100;
-	/** Toleranz in Blöcken unterhalb der Augenhöhe, ab der ein Projektiltreffer als Kopftreffer zählt. */
+	/** Punkte für einen Kill mit Treffer in den Hals. */
+	public int pointsPerNeckKill = 70;
+	/** Punkte für einen Kill mit Treffer in Arm oder Bein. */
+	public int pointsPerLimbKill = 50;
+	/** Punkte für einen Kill durch Explosion, Blitz, Druckwelle oder Electric Cherry. */
+	public int pointsPerExplosiveKill = 50;
+	/** Mehr Punkte kann ein Spieler nicht haben (Grenze in BO3). */
+	public int pointsMax = 4194303;
+	/** Wer down geht, verliert diesen Anteil seiner Punkte (auf 10 aufgerundet). */
+	public double downPenaltyFraction = 0.05;
+	/** Veraltet, wird nicht mehr benutzt: Kopftreffer bestimmt jetzt hitZones. */
 	public double headshotTolerance = 0.35;
+
+	/** Trefferzonen am Zombie (Höhen in Blöcken über den Füßen, für einen 1,95 hohen Zombie). */
+	public HitZoneConfig hitZones = new HitZoneConfig();
+
+	/** Höhen der Trefferzonen. Arme erkennt man am seitlichen Abstand von der Körpermitte. */
+	public static class HitZoneConfig {
+		/** Größe, für die die Höhen gelten; größere oder kleinere Wesen werden umgerechnet. */
+		public double referenceHeight = 1.95;
+		/** Ab hier Kopf. */
+		public double headMinY = 1.50;
+		/** Ab hier Hals (bis zum Kopf). */
+		public double neckMinY = 1.40;
+		/** Ab hier Oberkörper (bis zum Hals). */
+		public double torsoUpperMinY = 1.125;
+		/** Ab hier Bauch (bis zum Oberkörper); darunter Beine. */
+		public double torsoLowerMinY = 0.75;
+		/** Arme: zwischen dieser Höhe und dem Kopf ... */
+		public double armMinY = 1.20;
+		/** ... und mindestens so weit seitlich von der Körpermitte. */
+		public double armLateral = 0.25;
+		/** Deadshot: der Kopf reicht so viel weiter nach unten (der Hals zählt als Kopf). */
+		public double deadshotHeadExtension = 0.10;
+	}
 
 	// ---------------------------------------------------------------- Runden
 	/** Wartezeit nach /zombies start bis Runde 1 beginnt. */
@@ -89,13 +124,18 @@ public class ZombiesConfig {
 	public int healthLinearUntilRound = 9;
 	/** ... danach wird es pro Runde mit diesem Faktor multipliziert. */
 	public double healthFactorAfterLinear = 1.1;
-	/** Obergrenze des Zombie-Lebens. */
-	public double healthMax = 1.0E9;
 	/**
-	 * Schaden, der nicht aus Schusswaffen kommt (Faust, Schwert, Bogen), wird damit malgenommen.
-	 * Faust (1) × 150 = 150, so viel wie das Messer in BO3: Runde 1 stirbt mit einem Schlag.
+	 * Obergrenze des Zombie-Lebens. Wie in BO3 bleibt das Leben stehen, sobald die nächste Runde
+	 * darüber läge (ab Runde 162: 2.035.642.980).
+	 */
+	public double healthMax = 2147483647.0;
+	/**
+	 * Schaden, der weder aus Schusswaffen noch aus dem Nahkampf kommt (Bogen, Armbrust), wird damit
+	 * malgenommen. Faust und Schwert machen wie das Messer immer knifeDamage.
 	 */
 	public double meleeDamageScale = 150.0;
+	/** Rückstoßresistenz der Rundenzombies (1 = Kugeln und Messer schieben sie nicht zurück, wie in BO3). */
+	public double zombieKnockbackResistance = 1.0;
 	/** Schaden eines Messerstichs (Taste V) in BO3-Einheiten. 150 = Runde-1-Zombies sterben mit einem Stich. */
 	public double knifeDamage = 150.0;
 
@@ -132,12 +172,12 @@ public class ZombiesConfig {
 	public int runnerAttackCooldownTicks = 14;
 
 	/**
-	 * Angriffsschaden der Zombies. In BO3 macht ein Schlag 50 von 150 Leben, also ist man nach
-	 * drei Schlägen down, egal in welcher Runde. 6.7 von 20 Minecraft-Leben entspricht dem.
+	 * Schaden eines Zombie-Schlags in BO3-Einheiten. In BO3 macht ein Schlag 50 von 150 Leben, also
+	 * ist man nach drei Schlägen down (mit Juggernog nach fünf), egal in welcher Runde.
 	 */
-	public double damageBase = 6.7;
+	public double damageBase = 50.0;
 	public double damagePerRound = 0.0;
-	public double damageMax = 6.7;
+	public double damageMax = 50.0;
 
 	/** Wie weit Zombies Spieler wahrnehmen (Blöcke). */
 	public double followRange = 64.0;
@@ -203,16 +243,16 @@ public class ZombiesConfig {
 	public int arrowsPerAmmo = 32;
 
 	/**
-	 * Werte der Schusswaffen, Schlüssel = Item-Name ohne Namespace (pistol, smg, ...).
-	 * Schaden in halben Herzen; Ticks: 20 = 1 Sekunde.
+	 * Werte der Schusswaffen, Schlüssel = Item-Name ohne Namespace (mr6, kn_44, ...).
+	 * Schaden in BO3-Einheiten; Ticks: 20 = 1 Sekunde; Entfernungen in Blöcken.
 	 */
 	public Map<String, GunStats> guns = defaultGuns();
 
 	/** Preis an der Aufrüst-Maschine. */
 	public int upgradePrice = 5000;
-	/** Schaden aufgerüsteter Waffen = Schaden × dieser Faktor. */
+	/** Nur Rückfallwert: Schaden aufgerüsteter Waffen ohne eigenen Wert = Schaden × dieser Faktor. */
 	public double upgradeDamageMultiplier = 2.0;
-	/** Magazin und Reserve aufgerüsteter Waffen = Wert × dieser Faktor. */
+	/** Nur Rückfallwert: Magazin und Reserve aufgerüsteter Waffen ohne eigenen Wert = Wert × dieser Faktor. */
 	public double upgradeAmmoMultiplier = 1.5;
 
 	/** Standardwerte aller Schusswaffen (siehe {@link GunCatalog}). */
@@ -224,16 +264,25 @@ public class ZombiesConfig {
 		return guns;
 	}
 
-	/** Werte einer Schusswaffe. */
+	/**
+	 * Werte einer Schusswaffe. Felder mit 0 bedeuten "Standard" (steht jeweils dabei), damit ältere
+	 * oder von Hand gekürzte Einträge weiter funktionieren. Die Berechnung steht in {@link de.knospenraucher.mczombies.weapon.GunItem}.
+	 */
 	public static class GunStats {
-		/** Schaden pro Kugel (bei Raketen: Schaden im Zentrum der Explosion). */
+		/** Schaden pro Kugel auf kurze Entfernung (Raketen: im Zentrum der Explosion). */
 		public double damage;
+		/** Schaden ab minDamageRange (0 = wie damage, also kein Abfall). */
+		public double damageMin;
+		/** Bis zu dieser Entfernung voller Schaden ... */
+		public double maxDamageRange;
+		/** ... ab hier nur noch damageMin, dazwischen gleitend (0 = kein Abfall). */
+		public double minDamageRange;
 		/** Schuss pro Magazin. */
 		public int magazine;
 		/** Maximale Reservemunition. */
 		public int reserve;
-		/** Ticks zwischen zwei Schüssen. */
-		public int fireRateTicks;
+		/** Ticks zwischen zwei Schüssen (Kommazahl, 1200 / Schuss pro Minute); bei Feuerstößen von Stoß zu Stoß. */
+		public double fireRateTicks;
 		/** Dauer des Nachladens in Ticks. */
 		public int reloadTicks;
 		/** Reichweite in Blöcken. */
@@ -246,37 +295,40 @@ public class ZombiesConfig {
 		public boolean automatic;
 		/** Wie viele Zombies eine Kugel hintereinander treffen kann. */
 		public int penetration;
+		/** Anteil des Schadens, der nach jedem durchschossenen Zombie übrig bleibt (0 = 1, also kein Verlust). */
+		public double penetrationDamageFactor;
 		/** Explosionsradius in Blöcken (0 = keine Explosion). */
 		public double explosionRadius;
 		/** Schadensfaktor bei Kopftreffern. */
 		public double headshotMultiplier;
+		/** Schadensfaktor bei Treffern in Hals, Körper und Arme/Beine (0 = 1). */
+		public double neckMultiplier;
+		public double torsoMultiplier;
+		public double limbMultiplier;
 		/** Schüsse pro Abzug (Feuerstoß); 0 oder 1 = einzeln. */
 		public int burst;
-		/** Ticks zwischen den Schüssen eines Feuerstoßes. */
-		public int burstIntervalTicks;
-		/** Werte nach Pack-a-Punch; 0 = Standardwert × upgradeDamageMultiplier bzw. upgradeAmmoMultiplier. */
+		/** Ticks zwischen den Schüssen eines Feuerstoßes (Kommazahl). */
+		public double burstIntervalTicks;
+		/** Werte nach Pack-a-Punch; 0 = Standardwert (Schaden × upgradeDamageMultiplier, Munition × upgradeAmmoMultiplier). */
 		public double upgradedDamage;
+		/** Mindestschaden nach Pack-a-Punch (0 = im selben Verhältnis wie vorher). */
+		public double upgradedDamageMin;
 		public int upgradedMagazine;
 		public int upgradedReserve;
 		/** Explosionsradius nach Pack-a-Punch (0 = wie vorher). */
 		public double upgradedExplosionRadius;
+		/** Kopftreffer-Faktor nach Pack-a-Punch (0 = wie vorher). */
+		public double upgradedHeadshotMultiplier;
+		/** Durchschlag nach Pack-a-Punch (0 = wie vorher) und Schadensanteil danach (0 = wie vorher). */
+		public int upgradedPenetration;
+		public double upgradedPenetrationDamageFactor;
+		/** Feuerrate und Nachladezeit nach Pack-a-Punch (0 = wie vorher). */
+		public double upgradedFireRateTicks;
+		public int upgradedReloadTicks;
 		/** Sonderwirkung: ray, lightning, thunder, annihilate (leer = keine). */
 		public String special = "";
 
-		public GunStats(double damage, int magazine, int reserve, int fireRateTicks, int reloadTicks, double range,
-				double spread, int pellets, boolean automatic, int penetration, double explosionRadius, double headshotMultiplier) {
-			this.damage = damage;
-			this.magazine = magazine;
-			this.reserve = reserve;
-			this.fireRateTicks = fireRateTicks;
-			this.reloadTicks = reloadTicks;
-			this.range = range;
-			this.spread = spread;
-			this.pellets = pellets;
-			this.automatic = automatic;
-			this.penetration = penetration;
-			this.explosionRadius = explosionRadius;
-			this.headshotMultiplier = headshotMultiplier;
+		public GunStats() {
 		}
 
 		public GunStats copy() {
@@ -313,6 +365,34 @@ public class ZombiesConfig {
 	public String startingWeapon = "mczombies:mr6";
 	/** Andere Mobs (Tiere, Monster) während des Spiels aus der Welt entfernen. */
 	public boolean removeOtherMobsDuringGame = true;
+
+	// ---- Leben der Spieler (Black Ops III)
+	/** Leben eines Spielers in BO3-Einheiten (3 Zombie-Schläge). */
+	public double playerHealth = 150.0;
+	/** Leben mit Juggernog (5 Zombie-Schläge). */
+	public double juggernogHealth = 250.0;
+	/** So viele BO3-Lebenspunkte sind ein Minecraft-Lebenspunkt (150 → 30, also 15 Herzen). */
+	public double bo3HealthPerMcHealth = 5.0;
+	/** Nach so vielen Ticks ohne Treffer heilt man sich (48 = 2,4 Sekunden) ... */
+	public int regenDelayTicks = 48;
+	/** ... außer man hatte höchstens diesen Anteil Leben übrig (schwer verletzt) ... */
+	public double veryHurtFraction = 0.2;
+	/** ... dann dauert es so lange (100 = 5 Sekunden). */
+	public int veryHurtRegenDelayTicks = 100;
+	/** Danach füllt sich pro Tick dieser Anteil des Lebens auf. */
+	public double regenPerTick = 0.1;
+	/** Kein Hunger und keine Vanilla-Heilung durch Essen während des Spiels. */
+	public boolean disableHunger = true;
+	/** Herzen, Hunger und Rüstung im Spiel ausblenden (BO3 zeigt kein Leben an; rotes Blut am Rand statt dessen). */
+	public boolean hideVanillaBars = true;
+	/** Eigene Explosionen (XM-53, Ray Gun) verletzen einen selbst, wie in BO3. */
+	public boolean explosiveSelfDamage = true;
+	/** Mehr als so viel (BO3) zieht eine eigene Explosion nicht ab, solange man mehr Leben hat. */
+	public double explosiveSelfDamageCap = 75.0;
+	/** Dasselbe für die Ray Gun. */
+	public double rayGunSelfDamageCap = 25.0;
+	/** Explosionen bekommen wie in BO3 Zusatzschaden: Runde × Zufall 0 bis 99. */
+	public boolean explosiveRoundBonus = true;
 
 	private static Map<String, Integer> defaultPerkPrices() {
 		Map<String, Integer> prices = new LinkedHashMap<>();
@@ -362,6 +442,23 @@ public class ZombiesConfig {
 				guns.keySet().removeIf(key -> GunCatalog.get(key) == null);
 			}
 		}
+		if (configVersion < 8) {
+			// Lebens- und Schadenssystem aus BO3: Trefferzonen, Reichweitenabfall, neue Waffenwerte,
+			// Spielerleben 150 (Juggernog 250), Zombie-Schlag 50, Zombie-Leben ohne Rundungsdrift.
+			if (configVersion >= 6) {
+				MCZombies.LOGGER.info("mczombies.json: Waffenwerte wurden auf die neuen BO3-Standards gesetzt (alte Datei als Sicherung daneben)");
+			}
+			guns = defaultGuns();
+			healthMax = 2147483647.0;
+			damageBase = 50.0;
+			damagePerRound = 0.0;
+			damageMax = 50.0;
+			pointsPerKill = 60;
+			hitZones = new HitZoneConfig();
+		}
+		if (hitZones == null) {
+			hitZones = new HitZoneConfig();
+		}
 		if (perkPrices == null) {
 			perkPrices = defaultPerkPrices();
 		}
@@ -382,12 +479,18 @@ public class ZombiesConfig {
 	public static void load() {
 		try {
 			if (Files.exists(FILE)) {
+				ZombiesConfig loaded;
 				try (Reader reader = Files.newBufferedReader(FILE, StandardCharsets.UTF_8)) {
-					ZombiesConfig loaded = GSON.fromJson(reader, ZombiesConfig.class);
-					if (loaded != null) {
-						loaded.migrate();
-						instance = loaded;
+					loaded = GSON.fromJson(reader, ZombiesConfig.class);
+				}
+				if (loaded != null) {
+					if (loaded.configVersion < CURRENT_VERSION) {
+						// Vor dem Anpassen sichern, damit eigene Änderungen nicht verloren gehen.
+						Path backup = FILE.resolveSibling("mczombies.json.v" + loaded.configVersion + ".bak");
+						Files.copy(FILE, backup, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 					}
+					loaded.migrate();
+					instance = loaded;
 				}
 			} else {
 				instance = new ZombiesConfig();

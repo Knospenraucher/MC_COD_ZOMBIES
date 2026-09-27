@@ -57,7 +57,7 @@ final class WonderWeapons {
 					.orElse(null);
 		}
 		for (LivingEntity target : struck) {
-			GunManager.hurt(level, player, target, damage, false);
+			GunManager.hurt(level, player, target, damage, HitZone.NONE, true);
 		}
 	}
 
@@ -77,7 +77,7 @@ final class WonderWeapons {
 			if (distance > range || distance < 1.0E-3 || offset.normalize().dot(look) < THUNDER_CONE_COS) {
 				continue;
 			}
-			GunManager.hurt(level, player, target, damage, false);
+			GunManager.hurt(level, player, target, damage, HitZone.NONE, true);
 			Vec3 push = offset.normalize().scale(upgraded ? 3.0 : 2.0);
 			target.push(push.x, 0.6, push.z);
 		}

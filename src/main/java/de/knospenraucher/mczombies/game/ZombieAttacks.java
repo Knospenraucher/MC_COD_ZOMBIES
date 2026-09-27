@@ -113,9 +113,14 @@ public final class ZombieAttacks {
 		if (Perks.isProtected(player)) {
 			return;
 		}
+		GameManager game = GameManager.get();
+		int round = game != null ? Math.max(1, game.getRound()) : 1;
+		// BO3: 50 Schaden pro Schlag, ohne Schwierigkeitsgrad, ohne Rückstoß und ohne Abklingzeit
+		// (zwei Zombies können gleichzeitig treffen).
+		float damage = (float) PlayerHealth.toMinecraft(RoundScaling.damage(round));
 		attacking = true;
 		try {
-			player.hurtServer(level, zombie.damageSources().mobAttack(zombie), (float) ZombiesConfig.get().damageBase);
+			player.hurtServer(level, PlayerHealth.zombieSwipe(level, zombie), damage);
 		} finally {
 			attacking = false;
 		}

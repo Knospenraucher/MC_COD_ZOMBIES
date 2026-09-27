@@ -5,6 +5,7 @@ import de.knospenraucher.mczombies.weapon.GunManager;
 import de.knospenraucher.mczombies.weapon.KnifeMelee;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,8 +16,9 @@ import java.util.UUID;
  * <p>
  * Minecraft erlaubt höchstens 1024 Leben, deshalb haben Rundenzombies in Minecraft immer 20 Leben
  * und das echte Leben steht hier. Jeder Treffer wird in {@code LivingEntityMixin} abgefangen:
- * Schusswaffen ziehen ihren BO3-Schaden direkt ab, alles andere (Faust, Schwert, Bogen) wird mit
- * {@link ZombiesConfig#meleeDamageScale} umgerechnet (Faust = 150 wie das Messer).
+ * Schusswaffen ziehen ihren BO3-Schaden direkt ab, Nahkampf (Messer, Faust, Schwert) macht wie das
+ * BO3-Messer immer {@link ZombiesConfig#knifeDamage}, alles andere (Bogen) wird mit
+ * {@link ZombiesConfig#meleeDamageScale} umgerechnet.
  * Erst wenn das BO3-Leben aufgebraucht ist, bekommt der Zombie tödlichen Minecraft-Schaden.
  */
 public final class ZombieHealth {
@@ -80,7 +82,10 @@ public final class ZombieHealth {
 				return 0.0F;
 			}
 			pool.lastMeleeTick = now;
-			damage = amount * ZombiesConfig.get().meleeDamageScale;
+			// Faust oder Schwert: wie ein Messerstich, egal welche Waffe (sonst machte ein Diamantschwert 1050).
+			damage = source.getDirectEntity() instanceof Player
+					? ZombiesConfig.get().knifeDamage
+					: amount * ZombiesConfig.get().meleeDamageScale;
 		}
 		pool.health -= damage;
 		if (pool.health <= 0) {

@@ -17,30 +17,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build
         run: ./gradlew build
-      - name: Signaturen (temporär)
-        if: always()
-        run: |
-          set +e
-          CP=$(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft | tr '\n' ':')
-          javap -cp "$CP" net.minecraft.sounds.SoundEvents | grep -i 'HEARTBEAT'
-          javap -cp "$CP" net.minecraft.world.damagesource.DamageSource | grep 'DamageSource('
-          javap -cp "$CP" net.minecraft.world.damagesource.DamageTypes | grep -i 'MOB_ATTACK\|EXPLOSION'
-          javap -cp "$CP" net.minecraft.tags.DamageTypeTags | grep -i 'COOLDOWN\|KNOCKBACK'
-          javap -cp "$CP" net.minecraft.core.RegistryAccess | grep -i 'lookup'
-          javap -cp "$CP" net.minecraft.core.HolderLookup\$Provider | grep -i 'lookup'
-          javap -cp "$CP" net.minecraft.core.HolderGetter | grep -i 'get'
-          javap -cp "$CP" net.minecraft.core.Registry | grep -i 'getOrThrow\|get('
-          javap -cp "$CP" net.minecraft.world.level.Level | grep -i 'registryAccess'
-          javap -cp "$CP" net.minecraft.client.gui.GuiGraphicsExtractor | grep -i 'fill\|gradient' | head -30
-          javap -cp "$CP" net.minecraft.world.food.FoodData | head -30
-          javap -cp "$CP" net.minecraft.world.entity.player.Player | grep -i 'FoodData\|playSound\|playNotify'
-          javap -cp "$CP" net.minecraft.world.entity.Entity | grep -i 'playSound'
-          javap -cp "$CP" net.minecraft.world.phys.AABB | grep -i 'clip\|contains\|distanceTo'
-          javap -cp "$CP" net.minecraft.world.entity.ai.attributes.Attributes | grep -i 'KNOCKBACK'
-          javap -cp "$CP" net.minecraft.world.entity.ai.attributes.AttributeInstance | grep -i 'base\|modifier'
-          ls $(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft | head -1)
-          for J in $(find ~/.gradle/caches -name '*.jar' -path '*26.3*' | grep -i minecraft); do unzip -l "$J" | grep -E 'data/minecraft/(damage_type|tags/damage_type)/' | head -8; done
-          true
       - name: Mod-Jar hochladen
         uses: actions/upload-artifact@v4
         with:

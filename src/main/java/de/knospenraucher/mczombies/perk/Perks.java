@@ -4,6 +4,7 @@ import de.knospenraucher.mczombies.MCZombies;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.weapon.GunItem;
 import de.knospenraucher.mczombies.weapon.GunManager;
+import de.knospenraucher.mczombies.weapon.HitZone;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
@@ -40,8 +41,6 @@ import java.util.UUID;
 public final class Perks {
 	private static final Identifier JUGGERNOG_ID = MCZombies.id("perk_juggernog");
 	private static final Identifier STAMIN_UP_ID = MCZombies.id("perk_stamin_up");
-	/** Juggernog: 250 statt 100 Leben in BO3, also das 2,5-Fache (20 → 50 Minecraft-Leben). */
-	private static final double JUGGERNOG_BONUS_HEALTH = 30.0;
 	/** Stamin-Up: 7 % schneller. */
 	private static final double STAMIN_UP_SPEED = 0.07;
 	/** Speed Cola: Nachladezeit halbiert. */
@@ -49,9 +48,8 @@ public final class Perks {
 	/** Double Tap 2.0: 33 % schneller feuern, jede Kugel zählt doppelt. */
 	private static final double DOUBLE_TAP_FIRE_INTERVAL = 0.75;
 	private static final double DOUBLE_TAP_DAMAGE = 2.0;
-	/** Deadshot: Hüftfeuer streut nur halb so stark, Kopftreffer zählen etwas weiter unten schon. */
+	/** Deadshot: Hüftfeuer streut nur halb so stark, der Hals zählt als Kopf (siehe HitZones). */
 	private static final double DEADSHOT_HIP_SPREAD = 0.5;
-	private static final double DEADSHOT_HEAD_TOLERANCE = 0.35;
 	/** Quick Revive allein: so oft kann man sich selbst wiederbeleben. */
 	public static final int SOLO_REVIVES = 3;
 	/** Nach der Selbstwiederbelebung so lange unverwundbar. */
@@ -98,7 +96,10 @@ public final class Perks {
 		OWNED.computeIfAbsent(player.getUUID(), id -> new LinkedHashSet<>()).add(perk);
 		switch (perk) {
 			case JUGGERNOG -> {
-				modifier(player, Attributes.MAX_HEALTH, JUGGERNOG_ID, JUGGERNOG_BONUS_HEALTH, AttributeModifier.Operation.ADD_VALUE);
+				// BO3: 250 statt 150 Leben (umgerechnet in Minecraft-Leben).
+				ZombiesConfig c = ZombiesConfig.get();
+				double bonus = (c.juggernogHealth - c.playerHealth) / c.bo3HealthPerMcHealth;
+				modifier(player, Attributes.MAX_HEALTH, JUGGERNOG_ID, bonus, AttributeModifier.Operation.ADD_VALUE);
 				player.setHealth(player.getMaxHealth());
 			}
 			case STAMIN_UP -> modifier(player, Attributes.MOVEMENT_SPEED, STAMIN_UP_ID, STAMIN_UP_SPEED,
@@ -154,8 +155,8 @@ public final class Perks {
 		return has(player, Perk.DEADSHOT) ? DEADSHOT_HIP_SPREAD : 1.0;
 	}
 
-	public static double extraHeadTolerance(ServerPlayer player) {
-		return has(player, Perk.DEADSHOT) ? DEADSHOT_HEAD_TOLERANCE : 0.0;
+	public static boolean hasDeadshot(ServerPlayer player) {
+		return has(player, Perk.DEADSHOT);
 	}
 
 	/** Mule Kick verloren: Schusswaffen über dem Limit (die zuletzt einsortierten) verschwinden. */
@@ -197,7 +198,7 @@ public final class Perks {
 				e -> GunManager.isTarget(e, player) && e.distanceToSqr(center) <= radius * radius)) {
 			Vec3 at = target.getBoundingBox().getCenter();
 			level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, 10, 0.3, 0.5, 0.3, 0.2);
-			GunManager.hurt(level, player, target, damage, false);
+			GunManager.hurt(level, player, target, damage, HitZone.NONE, true);
 		}
 	}
 

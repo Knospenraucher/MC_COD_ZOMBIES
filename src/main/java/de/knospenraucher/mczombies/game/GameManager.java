@@ -174,6 +174,7 @@ public class GameManager {
 
 		mechanics.start(level);
 		Perks.reset();
+		PlayerHealth.reset();
 		for (ServerPlayer player : participants) {
 			// Übrig gebliebene Perk-Wirkungen (z. B. nach einem Absturz) entfernen.
 			Perks.clear(player);
@@ -246,7 +247,9 @@ public class GameManager {
 		}
 
 		if (isRunning()) {
-			mechanics.tick(level, ticks, aliveZombies, alivePlayers());
+			List<ServerPlayer> alive = alivePlayers();
+			mechanics.tick(level, ticks, aliveZombies, alive);
+			PlayerHealth.tick(alive);
 		}
 		if (isRunning() && ticks % MOB_SWEEP_INTERVAL == 0) {
 			removeOtherMobs();
@@ -357,7 +360,9 @@ public class GameManager {
 		setAttribute(zombie, Attributes.MAX_HEALTH, ZombieHealth.MINECRAFT_HEALTH);
 		boolean runner = ZombieAttacks.init(zombie, round);
 		setAttribute(zombie, Attributes.MOVEMENT_SPEED, ZombieAttacks.speed(runner));
-		setAttribute(zombie, Attributes.ATTACK_DAMAGE, RoundScaling.damage(round));
+		setAttribute(zombie, Attributes.ATTACK_DAMAGE, PlayerHealth.toMinecraft(RoundScaling.damage(round)));
+		// Wie in BO3 schieben Kugeln und Messer die Zombies nicht zurück.
+		setAttribute(zombie, Attributes.KNOCKBACK_RESISTANCE, ZombiesConfig.get().zombieKnockbackResistance);
 		setAttribute(zombie, Attributes.FOLLOW_RANGE, ZombiesConfig.get().followRange);
 		// Keine Vanilla-Verstärkungen, sonst stimmt die Zombie-Anzahl nicht.
 		setAttribute(zombie, Attributes.SPAWN_REINFORCEMENTS_CHANCE, 0.0);
@@ -522,6 +527,8 @@ public class GameManager {
 		} else if (player.isSpectator()) {
 			player.setGameMode(GameType.SURVIVAL);
 		}
+		// BO3-Leben: 150 (umgerechnet 30 Minecraft-Leben)
+		PlayerHealth.applyBaseHealth(player);
 		player.setHealth(player.getMaxHealth());
 		player.getFoodData().setFoodLevel(20);
 		player.clearFire();
@@ -552,6 +559,11 @@ public class GameManager {
 		PlayerData data = players.get(player.getUUID());
 		if (data == null) {
 			return false;
+		}
+		if (!data.down) {
+			// BO3: wer down geht, verliert 5 % seiner Punkte (auf 10 aufgerundet), auch allein mit Quick Revive.
+			data.pointsLostWhenDowned = downPenalty(data.points);
+			data.points -= data.pointsLostWhenDowned;
 		}
 		if (!data.down && isSolo() && Perks.trySoloRevive(player)) {
 			int left = Perks.SOLO_REVIVES - Perks.soloRevivesUsed(player);
@@ -598,6 +610,7 @@ public class GameManager {
 			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
 			if (player != null) {
 				Perks.clear(player);
+				PlayerHealth.restore(player);
 				player.setGameMode(entry.getValue().previousGameType);
 				player.setHealth(player.getMaxHealth());
 				List<ItemStack> saved = entry.getValue().savedInventory;
@@ -612,6 +625,13 @@ public class GameManager {
 			}
 		}
 		Perks.reset();
+		PlayerHealth.reset();
+	}
+
+	/** Punktabzug beim Down: 5 % abgerundet, dann auf die nächsten 10 aufgerundet (1234 → 70). */
+	static int downPenalty(int points) {
+		int lost = (int) Math.floor(Math.max(0, points) * ZombiesConfig.get().downPenaltyFraction);
+		return Math.min(Math.max(0, points), (lost + 9) / 10 * 10);
 	}
 
 	/** Ermittelt den aktuellen Spielmodus ohne Zugriff auf interne Felder. */
@@ -667,7 +687,8 @@ public class GameManager {
 	public void addPoints(ServerPlayer player, int amount) {
 		PlayerData data = players.get(player.getUUID());
 		if (data != null) {
-			data.points = Math.max(0, data.points + amount);
+			long points = (long) data.points + amount;
+			data.points = (int) Math.max(0, Math.min(ZombiesConfig.get().pointsMax, points));
 		}
 	}
 

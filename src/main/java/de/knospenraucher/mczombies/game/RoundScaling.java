@@ -20,26 +20,31 @@ public final class RoundScaling {
 	}
 
 	/**
-	 * Leben in BO3-Einheiten: in den ersten Runden fest aus {@code healthEarlyRounds}, danach
-	 * pro Runde {@code healthPerRound} mehr und ab {@code healthLinearUntilRound} exponentiell.
-	 * Standard wie in Black Ops III: 150, +100 pro Runde bis Runde 9 (950), danach ×1,1 pro Runde.
+	 * Leben in BO3-Einheiten, gerechnet wie im Original ({@code ai_calculate_health}): Runde 1 hat 150,
+	 * bis Runde 9 kommen je 100 dazu (950), danach je 10 %, bei jedem Schritt abgerundet.
+	 * Würde die nächste Runde {@code healthMax} überschreiten, bleibt das Leben stehen (BO3: ab
+	 * Runde 162 immer 2.035.642.980). Die ersten Runden kann {@code healthEarlyRounds} festlegen.
 	 */
 	public static double health(int round) {
 		ZombiesConfig c = ZombiesConfig.get();
 		List<Double> early = c.healthEarlyRounds != null && !c.healthEarlyRounds.isEmpty()
 				? c.healthEarlyRounds : List.of(c.healthBase);
-		double health;
-		if (round <= early.size()) {
-			health = early.get(Math.max(0, round - 1));
-		} else {
-			int linearRounds = Math.max(round, early.size());
-			linearRounds = Math.min(linearRounds, Math.max(c.healthLinearUntilRound, early.size()));
-			health = early.get(early.size() - 1) + c.healthPerRound * (linearRounds - early.size());
-			if (round > c.healthLinearUntilRound) {
-				health *= Math.pow(c.healthFactorAfterLinear, round - Math.max(c.healthLinearUntilRound, early.size()));
+		long health = (long) Math.floor(early.get(0));
+		for (int r = 2; r <= round; r++) {
+			long next;
+			if (r <= early.size()) {
+				next = (long) Math.floor(early.get(r - 1));
+			} else if (r <= c.healthLinearUntilRound) {
+				next = health + (long) Math.floor(c.healthPerRound);
+			} else {
+				next = health + (long) Math.floor(health * (c.healthFactorAfterLinear - 1.0) + 1.0E-7);
 			}
+			if (next > c.healthMax) {
+				break;
+			}
+			health = next;
 		}
-		return Math.min(Math.max(1.0, health), c.healthMax);
+		return Math.max(1L, health);
 	}
 
 	public static double speed(int round) {
@@ -47,6 +52,7 @@ public final class RoundScaling {
 		return Math.min(c.speedMax, c.speedBase + c.speedPerRound * (round - 1));
 	}
 
+	/** Schaden eines Zombie-Schlags in BO3-Einheiten (Standard: immer 50). */
 	public static double damage(int round) {
 		ZombiesConfig c = ZombiesConfig.get();
 		return Math.min(c.damageMax, c.damageBase + c.damagePerRound * (round - 1));

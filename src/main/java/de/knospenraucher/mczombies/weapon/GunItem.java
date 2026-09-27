@@ -60,12 +60,93 @@ public class GunItem extends Item {
 
 	// ---------------------------------------------------------------- Werte mit Aufrüstung
 
+	/** Schaden auf kurze Entfernung (mit Pack-a-Punch den aufgerüsteten Wert). */
 	public double damage(ItemStack stack) {
 		GunStats s = stats();
 		if (!isUpgraded(stack)) {
 			return s.damage;
 		}
 		return s.upgradedDamage > 0 ? s.upgradedDamage : s.damage * ZombiesConfig.get().upgradeDamageMultiplier;
+	}
+
+	/** Schaden auf große Entfernung (ab minDamageRange). */
+	public double damageMin(ItemStack stack) {
+		GunStats s = stats();
+		double min = s.damageMin > 0 ? s.damageMin : s.damage;
+		if (!isUpgraded(stack)) {
+			return min;
+		}
+		if (s.upgradedDamageMin > 0) {
+			return s.upgradedDamageMin;
+		}
+		// Gleiches Verhältnis wie ohne Pack-a-Punch.
+		return s.damage > 0 ? damage(stack) * min / s.damage : damage(stack);
+	}
+
+	/** Schaden auf diese Entfernung: bis maxDamageRange voll, ab minDamageRange damageMin, dazwischen gleitend. */
+	public double damageAt(ItemStack stack, double distance) {
+		GunStats s = stats();
+		double max = damage(stack);
+		double min = damageMin(stack);
+		double near = s.maxDamageRange;
+		double far = s.minDamageRange;
+		if (far <= 0 || distance <= near) {
+			return max;
+		}
+		if (distance >= far || far <= near) {
+			return min;
+		}
+		return max + (min - max) * (distance - near) / (far - near);
+	}
+
+	/** Schadensfaktor der Trefferzone. */
+	public double zoneMultiplier(ItemStack stack, HitZone zone) {
+		GunStats s = stats();
+		return switch (zone) {
+			case HEAD -> {
+				double head = s.headshotMultiplier > 0 ? s.headshotMultiplier : 1.0;
+				yield isUpgraded(stack) && s.upgradedHeadshotMultiplier > 0 ? s.upgradedHeadshotMultiplier : head;
+			}
+			case NECK -> orOne(s.neckMultiplier);
+			case TORSO_UPPER, TORSO_LOWER -> orOne(s.torsoMultiplier);
+			case ARM, LEG -> orOne(s.limbMultiplier);
+			case NONE -> 1.0;
+		};
+	}
+
+	/** Wie viele Zombies eine Kugel hintereinander trifft. */
+	public int penetration(ItemStack stack) {
+		GunStats s = stats();
+		int base = Math.max(1, s.penetration);
+		return isUpgraded(stack) && s.upgradedPenetration > 0 ? s.upgradedPenetration : base;
+	}
+
+	/** Anteil des Schadens, der nach jedem durchschossenen Zombie bleibt. */
+	public double penetrationFactor(ItemStack stack) {
+		GunStats s = stats();
+		double base = s.penetrationDamageFactor > 0 ? s.penetrationDamageFactor : 1.0;
+		return isUpgraded(stack) && s.upgradedPenetrationDamageFactor > 0 ? s.upgradedPenetrationDamageFactor : base;
+	}
+
+	/** Ticks von Schuss zu Schuss (bei Feuerstößen von Stoß zu Stoß). */
+	public double fireInterval(ItemStack stack) {
+		GunStats s = stats();
+		double base = s.fireRateTicks > 0 ? s.fireRateTicks : 1.0;
+		return isUpgraded(stack) && s.upgradedFireRateTicks > 0 ? s.upgradedFireRateTicks : base;
+	}
+
+	/** Ticks zwischen den Schüssen eines Feuerstoßes. */
+	public double burstInterval() {
+		return stats().burstIntervalTicks > 0 ? stats().burstIntervalTicks : 1.0;
+	}
+
+	public int reloadTicks(ItemStack stack) {
+		GunStats s = stats();
+		return isUpgraded(stack) && s.upgradedReloadTicks > 0 ? s.upgradedReloadTicks : s.reloadTicks;
+	}
+
+	private static double orOne(double value) {
+		return value > 0 ? value : 1.0;
 	}
 
 	public int magazineSize(ItemStack stack) {

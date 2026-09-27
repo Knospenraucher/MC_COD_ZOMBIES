@@ -3,8 +3,12 @@ package de.knospenraucher.mczombies.event;
 import de.knospenraucher.mczombies.config.ZombiesConfig;
 import de.knospenraucher.mczombies.game.GameManager;
 import de.knospenraucher.mczombies.game.PlayerData;
+import de.knospenraucher.mczombies.game.PlayerHealth;
 import de.knospenraucher.mczombies.game.ZombieAttacks;
+import de.knospenraucher.mczombies.perk.Perks;
 import de.knospenraucher.mczombies.weapon.GunManager;
+import de.knospenraucher.mczombies.weapon.HitZone;
+import de.knospenraucher.mczombies.weapon.HitZones;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -14,7 +18,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 
 /**
  * Verbindet Minecraft-Kampfereignisse mit dem Spiel:
- * Punkte für Treffer/Kills und "down" statt Tod für Spieler.
+ * Punkte für Treffer/Kills (nach Trefferzone wie in BO3), Heilung der Spieler und "down" statt Tod.
  */
 public final class CombatEvents {
 	private CombatEvents() {
@@ -36,13 +40,24 @@ public final class CombatEvents {
 			return true;
 		});
 
-		// Punkte für Treffer, die einen Zombie nicht töten.
+		// Punkte für Treffer, die einen Zombie nicht töten; verletzte Spieler heilen erst später.
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
-			if (blocked || damageTaken <= 0 || entity.getHealth() <= 0) {
+			if (blocked || damageTaken <= 0) {
+				return;
+			}
+			if (entity instanceof ServerPlayer player) {
+				GameManager game = GameManager.get();
+				if (game != null && game.isRunning() && game.getPlayerData(player) != null) {
+					PlayerHealth.onDamaged(player);
+				}
+				return;
+			}
+			if (entity.getHealth() <= 0) {
 				return;
 			}
 			ServerPlayer attacker = zombieAttacker(entity, source);
-			if (attacker != null) {
+			GunManager.Shot shot = GunManager.currentShot();
+			if (attacker != null && (shot == null || shot.hitPoints())) {
 				GameManager.get().addPoints(attacker, ZombiesConfig.get().pointsPerHit);
 			}
 		});
@@ -64,13 +79,18 @@ public final class CombatEvents {
 			int points;
 			if (isMelee(killer, source)) {
 				points = config.pointsPerMeleeKill;
-			} else if (isHeadshot(entity, source)) {
-				points = config.pointsPerHeadshotKill;
-				if (data != null) {
+			} else {
+				HitZone zone = killZone(entity, source, killer);
+				points = switch (zone) {
+					case HEAD -> config.pointsPerHeadshotKill;
+					case NECK -> config.pointsPerNeckKill;
+					case TORSO_UPPER, TORSO_LOWER -> config.pointsPerKill;
+					case ARM, LEG -> config.pointsPerLimbKill;
+					case NONE -> config.pointsPerExplosiveKill;
+				};
+				if (zone == HitZone.HEAD && data != null) {
 					data.headshots++;
 				}
-			} else {
-				points = config.pointsPerKill;
 			}
 			if (data != null) {
 				data.kills++;
@@ -96,16 +116,16 @@ public final class CombatEvents {
 		return GunManager.currentShot() == null && source.getDirectEntity() == player;
 	}
 
-	/** Kopftreffer: Schuss bzw. Projektil traf auf Höhe der Augen oder darüber. */
-	private static boolean isHeadshot(LivingEntity target, DamageSource source) {
+	/** Trefferzone des tödlichen Treffers: vom Schuss, bei Pfeilen nach deren Höhe, sonst keine. */
+	private static HitZone killZone(LivingEntity target, DamageSource source, ServerPlayer killer) {
 		GunManager.Shot shot = GunManager.currentShot();
 		if (shot != null) {
-			return shot.headshot();
+			return shot.zone();
 		}
 		Entity direct = source.getDirectEntity();
-		if (!(direct instanceof Projectile projectile)) {
-			return false;
+		if (direct instanceof Projectile projectile) {
+			return HitZones.classifyHeight(target, projectile.getY(), Perks.hasDeadshot(killer));
 		}
-		return projectile.getY() >= target.getEyeY() - ZombiesConfig.get().headshotTolerance;
+		return HitZone.NONE;
 	}
 }
