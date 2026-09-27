@@ -385,7 +385,9 @@ def main():
     for code in ("de_de", "en_us"):
         path = os.path.join(ROOT, "lang", code + ".json")
         data = json.load(open(path, encoding="utf-8"))
-        data = {k: v for k, v in data.items() if not k.startswith("item.mczombies.")}
+        ids = {g[0] for g in guns}
+        data = {k: v for k, v in data.items()
+                if not (k.startswith("item.mczombies.") and k.split(".")[2] in ids)}
         data.update(lang)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)

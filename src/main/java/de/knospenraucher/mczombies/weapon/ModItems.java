@@ -17,6 +17,11 @@ import java.util.List;
 /** Registriert die Schusswaffen der Mod. */
 public final class ModItems {
 	public static final List<GunItem> GUNS = new ArrayList<>();
+	/**
+	 * Unsichtbarer "Helm" für Rundenzombies: Solange etwas im Kopfslot steckt, verbrennen Zombies
+	 * nicht in der Sonne. Das Modell ist leer (minecraft:empty), der Zombie sieht also normal aus.
+	 */
+	public static final Item SUN_SHIELD = simple("sun_shield");
 
 	static {
 		for (GunCatalog.Def def : GunCatalog.all()) {
@@ -36,6 +41,11 @@ public final class ModItems {
 		GunItem item = Registry.register(BuiltInRegistries.ITEM, key, new GunItem(name, category, properties));
 		GUNS.add(item);
 		return item;
+	}
+
+	private static Item simple(String name) {
+		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, MCZombies.id(name));
+		return Registry.register(BuiltInRegistries.ITEM, key, new Item(new Item.Properties().setId(key).stacksTo(1)));
 	}
 
 	/** Lädt die Klasse (registriert damit alle Waffen) und fügt sie dem Kampf-Tab hinzu. */

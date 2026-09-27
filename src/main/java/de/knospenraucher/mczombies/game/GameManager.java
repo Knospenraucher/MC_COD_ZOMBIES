@@ -9,7 +9,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
+import de.knospenraucher.mczombies.weapon.ModItems;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -19,7 +19,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.Unit;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
@@ -33,8 +32,6 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.entity.EntityTypeTest;
 
@@ -362,12 +359,8 @@ public class GameManager {
 		// Zombies haben von Haus aus 2 Rüstungspunkte; die Härte kommt bei uns nur über das Leben.
 		setAttribute(zombie, Attributes.ARMOR, 0.0);
 		zombie.setHealth(ZombieHealth.MINECRAFT_HEALTH);
-		// Ein unzerstörbarer Helm verhindert, dass Zombies tagsüber verbrennen.
-		ItemStack helmet = new ItemStack(Items.LEATHER_HELMET);
-		helmet.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
-		// Der Helm soll keine Rüstung geben, sonst überlebt ein Runde-1-Zombie den Faustschlag.
-		helmet.set(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-		zombie.setItemSlot(EquipmentSlot.HEAD, helmet);
+		// Ein unsichtbarer "Helm" verhindert, dass Zombies tagsüber verbrennen (keine Rüstung, nicht zu sehen).
+		zombie.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.SUN_SHIELD));
 		zombie.setDropChance(EquipmentSlot.HEAD, 0.0F);
 
 		if (!level.addFreshEntity(zombie)) {
