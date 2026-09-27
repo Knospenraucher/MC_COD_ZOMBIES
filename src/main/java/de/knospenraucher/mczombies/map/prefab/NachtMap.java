@@ -63,6 +63,15 @@ public final class NachtMap {
 		new NachtMap(level, map, feet).build();
 	}
 
+	/**
+	 * Stellt die neun Perk-Automaten auf, z. B. in eine gespeicherte Vorlage von vor den Perks.
+	 *
+	 * @param origin Nullpunkt der Map (wie von {@link #origin})
+	 */
+	public static void addPerkMachines(ServerLevel level, MapData map, BlockPos origin) {
+		new NachtMap(level, map, origin.offset(0, 1, START_Z)).perkMachines();
+	}
+
 	/** Nullpunkt der Map, wenn der Spieler bei {@code feet} steht. */
 	public static BlockPos origin(BlockPos feet) {
 		return new BlockPos(feet.getX(), feet.getY() - 1, feet.getZ() - START_Z);

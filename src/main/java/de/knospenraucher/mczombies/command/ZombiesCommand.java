@@ -626,7 +626,14 @@ public final class ZombiesCommand {
 		boolean own = !original && MapTemplates.exists(name);
 		if (own) {
 			try {
-				MapTemplates.paste(level, map, name, origin.apply(player.blockPosition()));
+				BlockPos at = origin.apply(player.blockPosition());
+				MapTemplates.paste(level, map, name, at);
+				// Vorlagen von vor den Perks: die Test-Automaten nachrüsten.
+				if (NachtMap.NAME.equals(name) && map.getPerkMachines().isEmpty()) {
+					NachtMap.addPerkMachines(level, map, at);
+					ctx.getSource().sendSuccess(() -> Component.literal("Die neun Perk-Automaten wurden in deine Version eingebaut. "
+							+ "Mit /zombies edit start und /zombies edit save bleiben sie in der Vorlage.").withStyle(ChatFormatting.AQUA), false);
+				}
 			} catch (IOException | RuntimeException e) {
 				MCZombies.LOGGER.error("Konnte gespeicherte Vorlage nicht laden", e);
 				ctx.getSource().sendFailure(Component.literal("Deine gespeicherte Vorlage konnte nicht geladen werden (" + e.getMessage()
